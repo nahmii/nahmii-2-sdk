@@ -8,3 +8,6 @@
 
 # Locally downloaded dependencies
 node_modules
+
+# Output dir
+.dist
