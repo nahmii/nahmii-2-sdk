@@ -48,7 +48,7 @@ export const fromHexString = (inp: Buffer | string): Buffer => {
  * @param inp Input to cast to a hex string.
  * @return Input cast as a hex string.
  */
-export const toHexString = (inp: Buffer | string |  number ): string => {
+export const toHexString = (inp: Buffer | string | number): string => {
   if (typeof inp === 'number') {
     return BigNumber.from(inp).toHexString()
   } else {

@@ -7,6 +7,7 @@ export { Decoded, Input, List }
 /**
  * RLP Encoding based on: https://github.com/ethereum/wiki/wiki/%5BEnglish%5D-RLP
  * This function takes in a data, convert it to buffer if not, and a length for recursion
+ *
  * @param input - will be converted to buffer
  * @returns returns buffer of encoded data
  **/
@@ -28,6 +29,7 @@ export function encode(input: Input): Buffer {
 
 /**
  * Parse integers. Check if there is no leading zeros
+ *
  * @param v The value to parse
  * @param base The base to parse the integer into
  */
@@ -52,14 +54,21 @@ function encodeLength(len: number, offset: number): Buffer {
 
 /**
  * RLP Decoding based on: {@link https://github.com/ethereum/wiki/wiki/%5BEnglish%5D-RLP|RLP}
+ *
  * @param input - will be converted to buffer
  * @param stream - Is the input a stream (false by default)
  * @returns - returns decode Array of Buffers containg the original message
  **/
 export function decode(input: Buffer, stream?: boolean): Buffer
 export function decode(input: Buffer[], stream?: boolean): Buffer[]
-export function decode(input: Input, stream?: boolean): Buffer[] | Buffer | Decoded
-export function decode(input: Input, stream: boolean = false): Buffer[] | Buffer | Decoded {
+export function decode(
+  input: Input,
+  stream?: boolean
+): Buffer[] | Buffer | Decoded
+export function decode(
+  input: Input,
+  stream: boolean = false
+): Buffer[] | Buffer | Decoded {
   if (!input || (input as any).length === 0) {
     return Buffer.from([])
   }
@@ -79,6 +88,7 @@ export function decode(input: Input, stream: boolean = false): Buffer[] | Buffer
 
 /**
  * Get the length of the RLP input
+ *
  * @param input
  * @returns The length of the input or an empty Buffer if no input
  */
@@ -102,14 +112,21 @@ export function getLength(input: Input): Buffer | number {
   } else {
     // a list  over 55 bytes long
     const llength = firstByte - 0xf6
-    const length = safeParseInt(inputBuffer.slice(1, llength).toString('hex'), 16)
+    const length = safeParseInt(
+      inputBuffer.slice(1, llength).toString('hex'),
+      16
+    )
     return llength + length
   }
 }
 
 /** Decode an input with RLP */
 function _decode(input: Buffer): Decoded {
-  let length, llength, data, innerRemainder, d
+  let length
+  let llength
+  let data
+  let innerRemainder
+  let d
   const decoded: Buffer[] = []
   const firstByte = input[0]
 
@@ -136,7 +153,7 @@ function _decode(input: Buffer): Decoded {
     }
 
     return {
-      data: data,
+      data,
       remainder: input.slice(length),
     }
   } else if (firstByte <= 0xbf) {
@@ -148,7 +165,9 @@ function _decode(input: Buffer): Decoded {
     }
     length = safeParseInt(input.slice(1, llength).toString('hex'), 16)
     if (length <= 55) {
-      throw new Error('invalid RLP: expected string length to be greater than 55')
+      throw new Error(
+        'invalid RLP: expected string length to be greater than 55'
+      )
     }
     data = input.slice(llength, length + llength)
     if (data.length < length) {
@@ -156,7 +175,7 @@ function _decode(input: Buffer): Decoded {
     }
 
     return {
-      data: data,
+      data,
       remainder: input.slice(length + llength),
     }
   } else if (firstByte <= 0xf7) {
