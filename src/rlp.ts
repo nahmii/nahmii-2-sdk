@@ -56,28 +56,21 @@ export const encodeLength = (len: number, offset: number): Buffer => {
  * RLP Decoding based on: {@link https://github.com/ethereum/wiki/wiki/%5BEnglish%5D-RLP|RLP}
  *
  * @param input - will be converted to buffer
- * @param stream - Is the input a stream (false by default)
  * @returns - returns decode Array of Buffers containg the original message
  **/
-export const decode = (
-  input: Buffer | Buffer[] | Input,
-  stream?: boolean
-): Buffer[] | Buffer | Decoded => {
+export const decode = <Type extends Buffer | Buffer[]>(input: Type): Type => {
   if (!input || (input as any).length === 0) {
-    return Buffer.from([])
+    return Buffer.from([]) as Type
   }
 
   const inputBuffer = toBuffer(input)
   const decoded = _decode(inputBuffer)
 
-  if (stream) {
-    return decoded
-  }
   if (decoded.remainder.length !== 0) {
     throw new Error('invalid remainder')
   }
 
-  return decoded.data
+  return decoded.data as Type
 }
 
 /**
