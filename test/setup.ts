@@ -2,7 +2,11 @@
 import chai = require('chai')
 import Mocha from 'mocha'
 
-const should = chai.should()
-const expect = chai.expect
+const should: Chai.Should = chai.should()
+const expect: Chai.ExpectStatic = chai.expect
 
-export { should, expect, Mocha }
+export { 
+    should, 
+    expect, 
+    Mocha
+}
