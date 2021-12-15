@@ -1,0 +1,239 @@
+{
+    "_format": "hh-sol-artifact-1",
+    "contractName": "iNVM_L1CrossDomainMessenger",
+    "sourceName": "contracts/nahmii/iNVM/bridge/messaging/iNVM_L1CrossDomainMessenger.sol",
+    "abi": [
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": false,
+            "internalType": "bytes32",
+            "name": "msgHash",
+            "type": "bytes32"
+          }
+        ],
+        "name": "FailedRelayedMessage",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": false,
+            "internalType": "bytes32",
+            "name": "msgHash",
+            "type": "bytes32"
+          }
+        ],
+        "name": "RelayedMessage",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": false,
+            "internalType": "bytes",
+            "name": "message",
+            "type": "bytes"
+          }
+        ],
+        "name": "SentMessage",
+        "type": "event"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "_target",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_sender",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "_message",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "_messageNonce",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "timestamp",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "blockNumber",
+                "type": "uint256"
+              },
+              {
+                "internalType": "enum Lib_NVMCodec.QueueOrigin",
+                "name": "l1QueueOrigin",
+                "type": "uint8"
+              },
+              {
+                "internalType": "address",
+                "name": "l1TxOrigin",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "entrypoint",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "gasLimit",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bytes",
+                "name": "data",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct Lib_NVMCodec.Transaction",
+            "name": "_ovmTransaction",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "index",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "stateRoot",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "nvmTransactionHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes",
+                "name": "operatorSignature",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct Lib_NVMCodec.Receipt",
+            "name": "_receipt",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "stateRoot",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes",
+                "name": "stateTrieWitness",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "storageTrieWitness",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct iNVM_L1CrossDomainMessenger.L2MessageInclusionProof",
+            "name": "_proof",
+            "type": "tuple"
+          }
+        ],
+        "name": "relayMessage",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "_target",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_sender",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "_message",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "_queueIndex",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint32",
+            "name": "_gasLimit",
+            "type": "uint32"
+          }
+        ],
+        "name": "replayMessage",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "_target",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "_message",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint32",
+            "name": "_gasLimit",
+            "type": "uint32"
+          }
+        ],
+        "name": "sendMessage",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "xDomainMessageSender",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ],
+    "bytecode": "0x",
+    "deployedBytecode": "0x",
+    "linkReferences": {},
+    "deployedLinkReferences": {}
+  }
+  
