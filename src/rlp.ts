@@ -11,11 +11,11 @@ export { Decoded, Input, List }
  * @param input - will be converted to buffer
  * @returns returns buffer of encoded data
  **/
-export function encode(input: Input): Buffer {
+export const encode = (input: Input): Buffer => {
   if (Array.isArray(input)) {
     const output: Buffer[] = []
-    for (let i = 0; i < input.length; i++) {
-      output.push(encode(input[i]))
+    for (const item of input) {
+      output.push(encode(item))
     }
     const buf = Buffer.concat(output)
     return Buffer.concat([encodeLength(buf.length, 192), buf])
@@ -33,7 +33,7 @@ export function encode(input: Input): Buffer {
  * @param v The value to parse
  * @param base The base to parse the integer into
  */
-function safeParseInt(v: string, base: number): number {
+export const safeParseInt = (v: string, base: number): number => {
   if (v[0] === '0' && v[1] === '0') {
     throw new Error('invalid RLP: extra zeros')
   }
@@ -41,7 +41,7 @@ function safeParseInt(v: string, base: number): number {
   return parseInt(v, base)
 }
 
-function encodeLength(len: number, offset: number): Buffer {
+export const encodeLength = (len: number, offset: number): Buffer => {
   if (len < 56) {
     return Buffer.from([len + offset])
   } else {
@@ -59,16 +59,10 @@ function encodeLength(len: number, offset: number): Buffer {
  * @param stream - Is the input a stream (false by default)
  * @returns - returns decode Array of Buffers containg the original message
  **/
-export function decode(input: Buffer, stream?: boolean): Buffer
-export function decode(input: Buffer[], stream?: boolean): Buffer[]
-export function decode(
-  input: Input,
+export const decode = (
+  input: Buffer | Buffer[] | Input,
   stream?: boolean
-): Buffer[] | Buffer | Decoded
-export function decode(
-  input: Input,
-  stream: boolean = false
-): Buffer[] | Buffer | Decoded {
+): Buffer[] | Buffer | Decoded => {
   if (!input || (input as any).length === 0) {
     return Buffer.from([])
   }
@@ -92,7 +86,7 @@ export function decode(
  * @param input
  * @returns The length of the input or an empty Buffer if no input
  */
-export function getLength(input: Input): Buffer | number {
+export const getLength = (input: Input): Buffer | number => {
   if (!input || (input as any).length === 0) {
     return Buffer.from([])
   }
@@ -121,7 +115,7 @@ export function getLength(input: Input): Buffer | number {
 }
 
 /** Decode an input with RLP */
-function _decode(input: Buffer): Decoded {
+const _decode = (input: Buffer): Decoded => {
   let length
   let llength
   let data
@@ -219,12 +213,12 @@ function _decode(input: Buffer): Decoded {
 }
 
 /** Check if a string is prefixed by 0x */
-function isHexPrefixed(str: string): boolean {
+const isHexPrefixed = (str: string): boolean => {
   return str.slice(0, 2) === '0x'
 }
 
 /** Removes 0x from a given String */
-function stripHexPrefix(str: string): string {
+const stripHexPrefix = (str: string): string => {
   if (typeof str !== 'string') {
     return str
   }
@@ -232,7 +226,7 @@ function stripHexPrefix(str: string): string {
 }
 
 /** Transform an integer into its hexadecimal value */
-function intToHex(integer: number | bigint): string {
+const intToHex = (integer: number | bigint): string => {
   if (integer < 0) {
     throw new Error('Invalid integer as argument, must be unsigned!')
   }
@@ -241,18 +235,18 @@ function intToHex(integer: number | bigint): string {
 }
 
 /** Pad a string to be even */
-function padToEven(a: string): string {
+const padToEven = (a: string): string => {
   return a.length % 2 ? `0${a}` : a
 }
 
 /** Transform an integer into a Buffer */
-function intToBuffer(integer: number | bigint): Buffer {
+const intToBuffer = (integer: number | bigint): Buffer => {
   const hex = intToHex(integer)
   return Buffer.from(hex, 'hex')
 }
 
 /** Transform anything into a Buffer */
-function toBuffer(v: Input): Buffer {
+const toBuffer = (v: Input): Buffer => {
   if (!Buffer.isBuffer(v)) {
     if (typeof v === 'string') {
       if (isHexPrefixed(v)) {
