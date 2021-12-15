@@ -82,7 +82,7 @@ const getStateTrieProof = async (
  */
 const encodeCrossDomainMessage = (message: CrossDomainMessage): string => {
   return new ethers.utils.Interface(
-    'NVM_L2CrossDomainMessenger'
+    L2CrossDomainMessengerMetadata.abi
   ).encodeFunctionData('relayMessage', [
     message.target,
     message.sender,
