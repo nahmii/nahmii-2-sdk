@@ -246,12 +246,14 @@ export const sleep = async (ms: number): Promise<void> => {
  *
  * @param l2TokenAddress L2 address of the to be withdrawn token.
  * @param withdrawAmount The amount to withdraw.
+ * @param l2RpcProvider L2 provider.
  */
 export const withdraw = async (
   l2TokenAddress: string,
   withdrawAmount: BigNumber,
   l2RpcProvider: ethers.providers.JsonRpcProvider
 ) => {
+  // TODO: return formatted values from tx
   const L2StandardBridgeInterface = new ethers.utils.Interface(
     L2StandardBridgeMetadata.abi
   )
@@ -272,7 +274,7 @@ export const withdraw = async (
  * Relays all L2 => L1 messages found in a given L2 transaction.
  *
  * @param l2TransactionHash L2 transaction hash to find the messages in.
- * @param l2CrossDomainMessengerAddress Address of the L2CrossDomainMessenger.
+ * @param l1CrossDomainMessengerAddress Address of the l1CrossDomainMessenger.
  * @param l1RpcProvider L1 provider.
  * @param l2RpcProvider L2 provider.
  * @param l1Wallet L1 relayer wallet.
