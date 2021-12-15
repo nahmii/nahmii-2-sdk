@@ -88,12 +88,11 @@ describe('RLP encoding (list):', () => {
 })
 
 describe('RLP encoding (BigInt):', () => {
-  before(() => {
+  before(function () {
     if (version) {
       const nodeVersionNumber = Number(version.match(/^v([0-9]+)/)![1])
       if (nodeVersionNumber < 10) {
-        // eslint-disable-next-line no-invalid-this
-        this.skip()
+        this?.skip()
       }
     }
   })
