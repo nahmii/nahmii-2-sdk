@@ -6,7 +6,7 @@ module.exports = {
     },
     ignorePatterns: ['dist', 'packages/contracts/hardhat'],
     extends: ['plugin:prettier/recommended'],
-    parser: 'babel-eslint',
+    parser: '@typescript-eslint/parser',
     parserOptions: {
       es6: true,
       ecmaVersion: 6,
@@ -17,7 +17,6 @@ module.exports = {
       'eslint-plugin-unicorn',
       'eslint-plugin-jsdoc',
       'eslint-plugin-prefer-arrow',
-      'eslint-plugin-react',
       '@typescript-eslint',
     ],
     overrides: [
@@ -158,16 +157,6 @@ module.exports = {
       'quote-props': 'off',
       quotes: 'off',
       radix: 'error',
-      'react/jsx-curly-spacing': 'off',
-      'react/jsx-equals-spacing': 'off',
-      'react/jsx-tag-spacing': [
-        'off',
-        {
-          afterOpening: 'allow',
-          closingSlash: 'allow',
-        },
-      ],
-      'react/jsx-wrap-multilines': 'off',
       semi: 'off',
       'space-before-blocks': 'error',
       'space-before-function-paren': 'off',
