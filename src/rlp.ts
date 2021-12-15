@@ -1,4 +1,4 @@
-import { Buffer } from "buffer";
+import { Buffer } from 'buffer'
 import { Decoded, Input, List } from './types'
 
 // Types exported outside of this package
