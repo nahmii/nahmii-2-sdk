@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/nahmii/nahmii-2-sdk#readme",
   "devDependencies": {
+    "prettier": "^2.5.1",
     "typescript": "^4.5.4"
   },
   "dependencies": {
