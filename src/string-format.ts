@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer'
 /* Imports: External */
 import { BigNumber } from 'ethers'
 
@@ -33,13 +34,13 @@ export const add0x = (str: string): string => {
  * @param inp Input to cast to a buffer.
  * @return Input cast as a buffer.
  */
-/*export const fromHexString = (inp: Buffer | string): Buffer => {
+export const fromHexString = (inp: Buffer | string): Buffer => {
   if (typeof inp === 'string' && inp.startsWith('0x')) {
     return Buffer.from(inp.slice(2), 'hex')
   }
 
-  return Buffer.from(inp)Converts aBigNumberish to a HexString, with no unneces
-}*/
+  return Buffer.from(inp) //Converts aBigNumberish to a HexString, with no unneces
+}
 
 /**
  * Casts an input to a hex string.
@@ -47,13 +48,11 @@ export const add0x = (str: string): string => {
  * @param inp Input to cast to a hex string.
  * @return Input cast as a hex string.
  */
-//export const toHexString = (inp: Buffer | string |  number | null): string => {
-export const toHexString = (inp: number | BigNumber): string => {
+export const toHexString = (inp: Buffer | string |  number ): string => {
   if (typeof inp === 'number') {
     return BigNumber.from(inp).toHexString()
   } else {
-    throw "not implemented"
-    // return '0x' + fromHexString(inp).toString('hex')
+    return '0x' + fromHexString(inp).toString('hex')
   }
 }
 
