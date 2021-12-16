@@ -248,6 +248,7 @@ export const sleep = async (ms: number): Promise<void> => {
  * @param withdrawAmount The amount to withdraw.
  * @param l2RpcProvider L2 provider.
  * @param signer L2 transaction signer.
+ * @returns Returns the transaction response containing metadata for the withdrawal transaction.
  */
 export const withdraw = async (
   l2TokenAddress: string,
@@ -255,7 +256,6 @@ export const withdraw = async (
   l2Provider: ethers.providers.JsonRpcProvider,
   signer: ethers.Signer
 ): Promise<ethers.providers.TransactionResponse> => {
-  // TODO: return formatted values from tx
   const L2StandardBridgeInterface = new ethers.utils.Interface(
     L2StandardBridgeMetadata.abi
   )
@@ -265,11 +265,11 @@ export const withdraw = async (
     l2Provider
   )
   const signerWithProvider = signer.connect(l2Provider)
-  const result = await contract
+  const transactionResponse = await contract
     .connect(signerWithProvider)
     .withdraw(l2TokenAddress, withdrawAmount, 0, '0x')
 
-  return result
+  return transactionResponse
 }
 
 /**
@@ -350,6 +350,7 @@ export const relayXDomainMessages = async (
         break
       } catch (e: unknown) {
         if (e instanceof Error) {
+          // TODO: Rethink error information feedback
           if (e.message.includes('execution failed due to an exception')) {
             await sleep(1000)
           } else if (e.message.includes('Nonce too low')) {
