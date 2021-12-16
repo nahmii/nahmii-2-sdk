@@ -296,8 +296,8 @@ export const relayXDomainMessages = async (
     l2TransactionHash
   )
 
-  const ovmTx = formatNVMTx(extendedL2Tx)
-  const ovmReceipt = formatNVMReceipt(extendedL2Receipt)
+  const nvmTx = formatNVMTx(extendedL2Tx)
+  const nvmReceipt = formatNVMReceipt(extendedL2Receipt)
 
   const L1CrossDomainMessengerInterface = new ethers.utils.Interface(
     L1CrossDomainMessengerMetadata.abi
@@ -342,8 +342,8 @@ export const relayXDomainMessages = async (
             message.sender,
             message.message,
             message.messageNonce,
-            ovmTx,
-            ovmReceipt,
+            nvmTx,
+            nvmReceipt,
             proof
           )
         await result.wait()
