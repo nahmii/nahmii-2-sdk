@@ -12,28 +12,27 @@ describe('relay message', () => {
   const l2RPCProvider = new ethers.providers.JsonRpcProvider(
     'https://l2.testnet.nahmii.io/'
   )
-  const l1Wallet = new Wallet(
-    ''
-  )
+  // TODO: Use .env to insert a wallet PK for testing.
+  const l1Wallet = new Wallet('')
 
-  it('initialize withdrawal on L2', async () => {
+  xit('initialize withdrawal on L2', async () => {
     const l2TokenAddress = '0x4200000000000000000000000000000000000006'
     const withdrawAmount = BigNumber.from('1000000000000000000')
-    const result = withdraw(
+    const txResponse = await withdraw(
       l2TokenAddress,
       withdrawAmount,
       l2RPCProvider,
       l1Wallet
     )
-    await result
-    console.log(result)
+    const receipt = await txResponse.wait()
+    console.log(receipt)
     // const receipt = (await result).wait()
     // console.log(receipt)
   })
 
-  it.only('should relay message', async () => {
-    txHash =
-      ''
+  xit('should relay message', async () => {
+    // TODO: Pass a withdraw transaction hash
+    txHash = ''
     await relayXDomainMessages(
       txHash,
       l1CrossDomainMessengerAddress,
