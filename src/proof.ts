@@ -1,4 +1,4 @@
-import { Contract, ethers, BigNumber } from 'ethers'
+import { ethers, BigNumber } from 'ethers'
 import * as rlp from './rlp'
 import { toHexString, toRpcHexString, remove0x } from './string-format'
 import { injectL2Context, formatNVMTx, formatNVMReceipt } from './l2context'
@@ -100,7 +100,7 @@ const encodeCrossDomainMessage = (message: CrossDomainMessage): string => {
  * @returns Messages associated with the transaction.
  */
 export const getMessagesByTransactionHash = async (
-  l2RpcProvider: ethers.providers.JsonRpcProvider,
+  l2RpcProvider: ethers.providers.Provider,
   l2CrossDomainMessengerAddress: string,
   l2TransactionHash: string
 ): Promise<CrossDomainMessage[]> => {
@@ -110,12 +110,12 @@ export const getMessagesByTransactionHash = async (
     throw new Error(`unable to find tx with hash: ${l2TransactionHash}`)
   }
 
-  const L1CrossDomainMessengerInterface = new ethers.utils.Interface(
-    L1CrossDomainMessengerMetadata.abi
+  const L2CrossDomainMessengerInterface = new ethers.utils.Interface(
+    L2CrossDomainMessengerMetadata.abi
   )
   const l2CrossDomainMessenger = new ethers.Contract(
     l2CrossDomainMessengerAddress,
-    L1CrossDomainMessengerInterface,
+    L2CrossDomainMessengerInterface,
     l2RpcProvider
   )
 
@@ -247,12 +247,14 @@ export const sleep = async (ms: number): Promise<void> => {
  * @param l2TokenAddress L2 address of the to be withdrawn token.
  * @param withdrawAmount The amount to withdraw.
  * @param l2RpcProvider L2 provider.
+ * @param signer L2 transaction signer.
  */
 export const withdraw = async (
   l2TokenAddress: string,
   withdrawAmount: BigNumber,
-  l2RpcProvider: ethers.providers.JsonRpcProvider
-) => {
+  l2Provider: ethers.providers.JsonRpcProvider,
+  signer: ethers.Signer
+): Promise<ethers.providers.TransactionResponse> => {
   // TODO: return formatted values from tx
   const L2StandardBridgeInterface = new ethers.utils.Interface(
     L2StandardBridgeMetadata.abi
@@ -260,14 +262,14 @@ export const withdraw = async (
   const contract = new ethers.Contract(
     predeploys.NVM_L2StandardBridge,
     L2StandardBridgeInterface,
-    l2RpcProvider
+    l2Provider
   )
-  const result = await contract.withdraw(
-    l2TokenAddress,
-    withdrawAmount,
-    0,
-    '0x'
-  )
+  const signerWithProvider = signer.connect(l2Provider)
+  const result = await contract
+    .connect(signerWithProvider)
+    .withdraw(l2TokenAddress, withdrawAmount, 0, '0x')
+
+  return result
 }
 
 /**
@@ -277,14 +279,14 @@ export const withdraw = async (
  * @param l1CrossDomainMessengerAddress Address of the l1CrossDomainMessenger.
  * @param l1RpcProvider L1 provider.
  * @param l2RpcProvider L2 provider.
- * @param l1Wallet L1 relayer wallet.
+ * @param l1Signer L1 transaction signer.
  */
 export const relayXDomainMessages = async (
   l2TransactionHash: string,
   l1CrossDomainMessengerAddress: string,
   l1RpcProvider: ethers.providers.JsonRpcProvider,
   l2RpcProvider: ethers.providers.JsonRpcProvider,
-  l1Wallet: ethers.Wallet
+  l1Signer: ethers.Signer
 ): Promise<void> => {
   const extendedL2Provider = injectL2Context(l2RpcProvider)
   const extendedL2Tx = await extendedL2Provider.getTransaction(
@@ -293,6 +295,7 @@ export const relayXDomainMessages = async (
   const extendedL2Receipt = await extendedL2Provider.getTransactionReceipt(
     l2TransactionHash
   )
+
   const ovmTx = formatNVMTx(extendedL2Tx)
   const ovmReceipt = formatNVMReceipt(extendedL2Receipt)
 
@@ -302,7 +305,7 @@ export const relayXDomainMessages = async (
   const l1Messenger = new ethers.Contract(
     l1CrossDomainMessengerAddress,
     L1CrossDomainMessengerInterface,
-    l1Wallet
+    l1RpcProvider
   )
 
   let messagePairs: CrossDomainMessagePair[] = []
@@ -326,37 +329,36 @@ export const relayXDomainMessages = async (
         throw e
       }
     }
+  }
 
-    for (const { message, proof } of messagePairs) {
-      while (true) {
-        try {
-          const result = await l1Messenger
-            .connect(l1Wallet)
-            .relayMessage(
-              message.target,
-              message.sender,
-              message.message,
-              message.messageNonce,
-              ovmTx,
-              ovmReceipt,
-              proof
-            )
-          await result.wait()
-          break
-        } catch (e: unknown) {
-          if (e instanceof Error) {
-            if (e.message.includes('execution failed due to an exception')) {
-              await sleep(1000)
-            } else if (e.message.includes('Nonce too low')) {
-              await sleep(1000)
-            } else if (
-              e.message.includes('message has already been received')
-            ) {
-              continue
-            }
+  const signerWithProvider = l1Signer.connect(l1RpcProvider)
+  for (const { message, proof } of messagePairs) {
+    while (true) {
+      try {
+        const result = await l1Messenger
+          .connect(signerWithProvider)
+          .relayMessage(
+            message.target,
+            message.sender,
+            message.message,
+            message.messageNonce,
+            ovmTx,
+            ovmReceipt,
+            proof
+          )
+        await result.wait()
+        break
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          if (e.message.includes('execution failed due to an exception')) {
+            await sleep(1000)
+          } else if (e.message.includes('Nonce too low')) {
+            await sleep(1000)
+          } else if (e.message.includes('message has already been received')) {
+            break
           }
-          throw e
         }
+        throw e
       }
     }
   }
