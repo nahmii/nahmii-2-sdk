@@ -1,8 +1,9 @@
 {
   "name": "@nahmii/sdk",
   "version": "0.0.1",
-  "description": "",
+  "description": "The `@nahmii/sdk` package is a SDK to interact more easily with Nahmii 2.0.",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*.js",
     "dist/**/*.ts",
@@ -10,6 +11,7 @@
   ],
   "scripts": {
     "prepublish": "tsc -p ./tsconfig.build.json",
+    "build": "tsc -p ./tsconfig.build.json",
     "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.ts'",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
