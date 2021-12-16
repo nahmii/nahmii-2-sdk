@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "prepublish": "tsc -p ./tsconfig.build.json",
     "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.ts'",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
