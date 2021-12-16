@@ -22,6 +22,19 @@
     "type": "git",
     "url": "git+https://github.com/nahmii/nahmii-2-sdk.git"
   },
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "blockchain",
+    "crypto",
+    "defi",
+    "ethereum",
+    "nahmii",
+    "smart contracts",
+    "SDK"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
