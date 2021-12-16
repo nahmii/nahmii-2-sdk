@@ -2,7 +2,12 @@
   "name": "@nahmii/sdk",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.ts",
+    "dist/**/*.json"
+  ],
   "scripts": {
     "prepublish": "tsc -p ./tsconfig.build.json",
     "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.ts'",
