@@ -2,7 +2,7 @@ import { expect } from './setup'
 import { BigNumber } from 'ethers'
 
 /* Imports: Internal */
-import { toRpcHexString } from '../src'
+import { toRpcHexString } from '@src/string-format'
 
 describe('toRpcHexString', () => {
   it('should parse 0', () => {

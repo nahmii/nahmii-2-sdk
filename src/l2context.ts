@@ -16,26 +16,18 @@ export const injectL2Context = (l1Provider: providers.JsonRpcProvider) => {
   }
 
   // Pass through the state root and additional tx data
-  const blockWithTransactions = provider.formatter.blockWithTransactions.bind(
-    provider.formatter
-  )
+  const blockWithTransactions = provider.formatter.blockWithTransactions.bind(provider.formatter)
   provider.formatter.blockWithTransactions = (block) => {
     const b = blockWithTransactions(block)
     b.stateRoot = block.stateRoot
     for (let i = 0; i < b.transactions.length; i++) {
       b.transactions[i].l1BlockNumber = block.transactions[i].l1BlockNumber
       if (b.transactions[i].l1BlockNumber != null) {
-        b.transactions[i].l1BlockNumber = parseInt(
-          b.transactions[i].l1BlockNumber,
-          16
-        )
+        b.transactions[i].l1BlockNumber = parseInt(b.transactions[i].l1BlockNumber, 16)
       }
       b.transactions[i].l1Timestamp = block.transactions[i].l1Timestamp
       if (b.transactions[i].l1Timestamp != null) {
-        b.transactions[i].l1Timestamp = parseInt(
-          b.transactions[i].l1Timestamp,
-          16
-        )
+        b.transactions[i].l1Timestamp = parseInt(b.transactions[i].l1Timestamp, 16)
       }
       b.transactions[i].l1TxOrigin = block.transactions[i].l1TxOrigin
       b.transactions[i].queueOrigin = block.transactions[i].queueOrigin
@@ -45,9 +37,7 @@ export const injectL2Context = (l1Provider: providers.JsonRpcProvider) => {
   }
 
   // Handle additional tx data
-  const formatTxResponse = provider.formatter.transactionResponse.bind(
-    provider.formatter
-  )
+  const formatTxResponse = provider.formatter.transactionResponse.bind(provider.formatter)
   provider.formatter.transactionResponse = (transaction) => {
     const tx = formatTxResponse(transaction) as any
     tx.txType = transaction.txType
@@ -65,9 +55,7 @@ export const injectL2Context = (l1Provider: providers.JsonRpcProvider) => {
     return tx
   }
 
-  const formatReceiptResponse = provider.formatter.receipt.bind(
-    provider.formatter
-  )
+  const formatReceiptResponse = provider.formatter.receipt.bind(provider.formatter)
   provider.formatter.receipt = (value) => {
     const receipt = formatReceiptResponse(value) as any
     receipt.nvmTransactionHash = value.nvmTransactionHash

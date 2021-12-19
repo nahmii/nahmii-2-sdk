@@ -1,7 +1,7 @@
 import { Buffer } from 'buffer'
-import { Decoded, Input, List } from './types'
+import { Decoded, Input, List } from '@src/types'
 
-// Types exported outside of this package
+// Re-export
 export { Decoded, Input, List }
 
 /**
@@ -56,7 +56,7 @@ export const encodeLength = (len: number, offset: number): Buffer => {
  * RLP Decoding based on: {@link https://github.com/ethereum/wiki/wiki/%5BEnglish%5D-RLP|RLP}
  *
  * @param input - will be converted to buffer
- * @returns - returns decode Array of Buffers containg the original message
+ * @returns - returns decoded Buffer/Array of Buffers containing the original message
  **/
 export const decode = <Type extends Buffer | Buffer[]>(input: Type): Type => {
   if (!input || (input as any).length === 0) {
@@ -99,10 +99,7 @@ export const getLength = (input: Input): Buffer | number => {
   } else {
     // a list  over 55 bytes long
     const llength = firstByte - 0xf6
-    const length = safeParseInt(
-      inputBuffer.slice(1, llength).toString('hex'),
-      16
-    )
+    const length = safeParseInt(inputBuffer.slice(1, llength).toString('hex'), 16)
     return llength + length
   }
 }
@@ -152,9 +149,7 @@ const _decode = (input: Buffer): Decoded => {
     }
     length = safeParseInt(input.slice(1, llength).toString('hex'), 16)
     if (length <= 55) {
-      throw new Error(
-        'invalid RLP: expected string length to be greater than 55'
-      )
+      throw new Error('invalid RLP: expected string length to be greater than 55')
     }
     data = input.slice(llength, length + llength)
     if (data.length < length) {
@@ -212,9 +207,6 @@ const isHexPrefixed = (str: string): boolean => {
 
 /** Removes 0x from a given String */
 const stripHexPrefix = (str: string): string => {
-  if (typeof str !== 'string') {
-    return str
-  }
   return isHexPrefixed(str) ? str.slice(2) : str
 }
 
