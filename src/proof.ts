@@ -280,13 +280,15 @@ export const withdraw = async (
  * @param l1RpcProvider L1 provider.
  * @param l2RpcProvider L2 provider.
  * @param l1Signer L1 transaction signer.
+ * @param maxRetries maximum retries for relaying messages.
  */
 export const relayXDomainMessages = async (
   l2TransactionHash: string,
   l1CrossDomainMessengerAddress: string,
   l1RpcProvider: ethers.providers.JsonRpcProvider,
   l2RpcProvider: ethers.providers.JsonRpcProvider,
-  l1Signer: ethers.Signer
+  l1Signer: ethers.Signer,
+  maxRetries: number = 5
 ): Promise<void> => {
   const extendedL2Provider = injectL2Context(l2RpcProvider)
   const extendedL2Tx = await extendedL2Provider.getTransaction(
@@ -320,11 +322,9 @@ export const relayXDomainMessages = async (
       break
     } catch (e: unknown) {
       if (e instanceof Error) {
-        {
-          if (e.message.includes('unable to find state root batch for tx')) {
-            await sleep(1000)
-            continue
-          }
+        if (e.message.includes('unable to find state root batch for tx')) {
+          await sleep(1000)
+          continue
         }
         throw e
       }
@@ -333,6 +333,7 @@ export const relayXDomainMessages = async (
 
   const signerWithProvider = l1Signer.connect(l1RpcProvider)
   for (const { message, proof } of messagePairs) {
+    let errorCounter = 0
     while (true) {
       try {
         const result = await l1Messenger
@@ -347,14 +348,18 @@ export const relayXDomainMessages = async (
             proof
           )
         await result.wait()
+        errorCounter = 0
         break
       } catch (e: unknown) {
         if (e instanceof Error) {
           // TODO: Rethink error information feedback
-          if (e.message.includes('execution failed due to an exception')) {
-            await sleep(1000)
-          } else if (e.message.includes('Nonce too low')) {
-            await sleep(1000)
+          if (e.message.includes('execution failed due to an exception') ||
+            e.message.includes('Nonce too low')) {
+            if (errorCounter < maxRetries) {
+              errorCounter++
+              await sleep(1000)
+              continue
+            }
           } else if (e.message.includes('message has already been received')) {
             break
           }
