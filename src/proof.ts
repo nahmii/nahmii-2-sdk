@@ -1,11 +1,12 @@
 import { ethers, BigNumber } from 'ethers'
 import * as rlp from './rlp'
 import { toHexString, toRpcHexString, remove0x } from './string-format'
-import { setFormattersForTransactions, formatNVMTx, formatNVMReceipt } from './l2context'
+import { setTxOptionsForL2, formatNVMTx, formatNVMReceipt } from './l2-tx-formatting'
 
 import L1CrossDomainMessengerMetadata from './contract-metadata/iNVM_L1CrossDomainMessenger.json'
 import L2CrossDomainMessengerMetadata from './contract-metadata/NVM_L2CrossDomainMessenger.json'
 import L2StandardBridgeMetadata from './contract-metadata/NVM_L2StandardBridge.json'
+import type = Mocha.utils.type
 
 interface StateTrieProof {
   accountProof: string
@@ -93,17 +94,32 @@ const encodeCrossDomainMessage = (message: CrossDomainMessage): string => {
  * @param l2TransactionHash Hash of the L2 transaction to find a message for.
  * @returns Messages associated with the transaction.
  */
-export const getMessagesByTransactionHash = async (
+export const getL2ToL1MessagesByTransactionHash = async (
   l2RpcProvider: ethers.providers.Provider,
   l2CrossDomainMessengerAddress: string,
   l2TransactionHash: string
 ): Promise<CrossDomainMessage[]> => {
   // Complain if we can't find the given transaction.
   const transaction = await l2RpcProvider.getTransaction(l2TransactionHash)
-  if (transaction === null) {
+  if (transaction?.blockNumber == null) {
     throw new Error(`unable to find tx with hash: ${l2TransactionHash}`)
   }
 
+  return getL2ToL1MessagesByBlock(l2RpcProvider, l2CrossDomainMessengerAddress, transaction.blockNumber)
+}
+
+/**
+ * Get messages being sent from L2 to L1 for a specific block
+ *
+ * @param l2RpcProvider
+ * @param l2CrossDomainMessengerAddress
+ * @param l2Block Either blocknumber or blockhash
+ */
+export const getL2ToL1MessagesByBlock = async (
+  l2RpcProvider: ethers.providers.Provider,
+  l2CrossDomainMessengerAddress: string,
+  l2Block: number | string
+): Promise<CrossDomainMessage[]> => {
   const L2CrossDomainMessengerInterface = new ethers.utils.Interface(L2CrossDomainMessengerMetadata.abi)
   const l2CrossDomainMessenger = new ethers.Contract(
     l2CrossDomainMessengerAddress,
@@ -111,12 +127,12 @@ export const getMessagesByTransactionHash = async (
     l2RpcProvider
   )
 
+  const blockFilter = typeof l2Block === 'number' ? [l2Block, l2Block] : [l2Block]
   // Find all SentMessage events created in the same block as the given transaction. This is
   // reliable because we should only have one transaction per block.
   const sentMessageEvents = await l2CrossDomainMessenger.queryFilter(
     l2CrossDomainMessenger.filters.SentMessage(),
-    transaction.blockNumber,
-    transaction.blockNumber
+    ...blockFilter
   )
 
   // Decode the messages and turn them into a nicer struct.
@@ -138,6 +154,51 @@ export const getMessagesByTransactionHash = async (
 }
 
 /**
+ * Generate proofs for transactions
+ *
+ * @param message A CrossDomainMessage from the transaction
+ * @param receipt transaction receipt
+ * @param l2CrossDomainMessengerAddress
+ * @param l2RpcProvider
+ * @constructor
+ */
+const GetTransactionProof = async (
+  message: CrossDomainMessage,
+  receipt: ethers.providers.TransactionReceipt,
+  l2CrossDomainMessengerAddress: string,
+  l2RpcProvider: ethers.providers.JsonRpcProvider
+): Promise<CrossDomainMessageProof> => {
+  // We need to calculate the specific storage slot that demonstrates that this message was
+  // actually included in the L2 chain. The following calculation is based on the fact that
+  // messages are stored in the following mapping on L2:
+  // https://github.com/ethereum-optimism/optimism/blob/c84d3450225306abbb39b4e7d6d82424341df2be/packages/contracts/contracts/optimistic-ethereum/OVM/predeploys/OVM_L2ToL1MessagePasser.sol#L23
+  // You can read more about how Solidity storage slots are computed for mappings here:
+  // https://docs.soliditylang.org/en/v0.8.4/internals/layout_in_storage.html#mappings-and-dynamic-arrays
+  const messageSlot = ethers.utils.keccak256(
+    ethers.utils.keccak256(encodeCrossDomainMessage(message) + remove0x(l2CrossDomainMessengerAddress)) +
+      '00'.repeat(32)
+  )
+
+  // We need a Merkle trie proof for the given storage slot. This allows us to prove to L1 that
+  // the message was actually sent on L2.
+  const stateTrieProof = await getStateTrieProof(
+    l2RpcProvider,
+    receipt.blockNumber,
+    predeploys.NVM_L2ToL1MessagePasser,
+    messageSlot
+  )
+
+  // We now have enough information to create the message proof.
+  const proof: CrossDomainMessageProof = {
+    stateRoot: receipt.root!,
+    stateTrieWitness: stateTrieProof.accountProof,
+    storageTrieWitness: stateTrieProof.storageProof,
+  }
+
+  return proof
+}
+
+/**
  * Finds all L2 => L1 messages sent in a given L2 transaction and generates proofs for each of
  * those messages.
  *
@@ -155,48 +216,22 @@ export const getMessagesAndProofsForL2Transaction = async (
     l2RpcProvider = new ethers.providers.JsonRpcProvider(l2RpcProvider)
   }
 
-  const l2Receipt = await setFormattersForTransactions(l2RpcProvider).getTransactionReceipt(l2TransactionHash)
-
-  if (l2Receipt === null || l2Receipt.root == null) {
+  const receipt = await setTxOptionsForL2(l2RpcProvider).getTransactionReceipt(l2TransactionHash)
+  if (receipt == null) {
     throw new Error(`unable to find receipt with hash: ${l2TransactionHash}`)
   }
 
   // Find every message that was sent during this transaction. We'll then attach a proof for each.
-  const messages = await getMessagesByTransactionHash(l2RpcProvider, l2CrossDomainMessengerAddress, l2TransactionHash)
+  const messages = await getL2ToL1MessagesByTransactionHash(
+    l2RpcProvider,
+    l2CrossDomainMessengerAddress,
+    l2TransactionHash
+  )
 
   const messagePairs: CrossDomainMessagePair[] = []
   for (const message of messages) {
-    // We need to calculate the specific storage slot that demonstrates that this message was
-    // actually included in the L2 chain. The following calculation is based on the fact that
-    // messages are stored in the following mapping on L2:
-    // https://github.com/ethereum-optimism/optimism/blob/c84d3450225306abbb39b4e7d6d82424341df2be/packages/contracts/contracts/optimistic-ethereum/OVM/predeploys/OVM_L2ToL1MessagePasser.sol#L23
-    // You can read more about how Solidity storage slots are computed for mappings here:
-    // https://docs.soliditylang.org/en/v0.8.4/internals/layout_in_storage.html#mappings-and-dynamic-arrays
-    const messageSlot = ethers.utils.keccak256(
-      ethers.utils.keccak256(encodeCrossDomainMessage(message) + remove0x(l2CrossDomainMessengerAddress)) +
-        '00'.repeat(32)
-    )
-
-    // We need a Merkle trie proof for the given storage slot. This allows us to prove to L1 that
-    // the message was actually sent on L2.
-    const stateTrieProof = await getStateTrieProof(
-      l2RpcProvider,
-      l2Receipt.blockNumber,
-      predeploys.NVM_L2ToL1MessagePasser,
-      messageSlot
-    )
-
-    // We now have enough information to create the message proof.
-    const proof: CrossDomainMessageProof = {
-      stateRoot: l2Receipt.root,
-      stateTrieWitness: stateTrieProof.accountProof,
-      storageTrieWitness: stateTrieProof.storageProof,
-    }
-
-    messagePairs.push({
-      message,
-      proof,
-    })
+    const proof = await GetTransactionProof(message, receipt, l2CrossDomainMessengerAddress, l2RpcProvider)
+    messagePairs.push({ message, proof })
   }
 
   return messagePairs
@@ -258,7 +293,7 @@ export const relayXDomainMessages = async (
   l1Signer: ethers.Signer,
   maxRetries: number = 5
 ): Promise<void> => {
-  const extendedL2Provider = setFormattersForTransactions(l2RpcProvider)
+  const extendedL2Provider = setTxOptionsForL2(l2RpcProvider)
   const extendedL2Tx = await extendedL2Provider.getTransaction(l2TransactionHash)
   const extendedL2Receipt = await extendedL2Provider.getTransactionReceipt(l2TransactionHash)
 

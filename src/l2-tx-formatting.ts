@@ -4,7 +4,7 @@ import { providers } from 'ethers'
 /**
  * Helper for adding additional L2 context to transactions
  */
-export const setFormattersForTransactions = (provider: providers.JsonRpcProvider): providers.JsonRpcProvider => {
+export const setTxOptionsForL2 = (provider: providers.JsonRpcProvider): providers.JsonRpcProvider => {
   const extProvider = cloneDeep(provider)
 
   // Pass through the state root
