@@ -4,20 +4,20 @@ import { providers } from 'ethers'
 /**
  * Helper for adding additional L2 context to transactions
  */
-export const injectL2Context = (l1Provider: providers.JsonRpcProvider) => {
-  const provider = cloneDeep(l1Provider)
+export const setFormattersForTransactions = (provider: providers.JsonRpcProvider): providers.JsonRpcProvider => {
+  const extProvider = cloneDeep(provider)
 
   // Pass through the state root
-  const blockFormat = provider.formatter.block.bind(provider.formatter)
-  provider.formatter.block = (block) => {
+  const blockFormat = extProvider.formatter.block.bind(extProvider.formatter)
+  extProvider.formatter.block = (block) => {
     const b = blockFormat(block)
     b.stateRoot = block.stateRoot
     return b
   }
 
   // Pass through the state root and additional tx data
-  const blockWithTransactions = provider.formatter.blockWithTransactions.bind(provider.formatter)
-  provider.formatter.blockWithTransactions = (block) => {
+  const blockWithTransactions = extProvider.formatter.blockWithTransactions.bind(extProvider.formatter)
+  extProvider.formatter.blockWithTransactions = (block) => {
     const b = blockWithTransactions(block)
     b.stateRoot = block.stateRoot
     for (let i = 0; i < b.transactions.length; i++) {
@@ -37,8 +37,8 @@ export const injectL2Context = (l1Provider: providers.JsonRpcProvider) => {
   }
 
   // Handle additional tx data
-  const formatTxResponse = provider.formatter.transactionResponse.bind(provider.formatter)
-  provider.formatter.transactionResponse = (transaction) => {
+  const formatTxResponse = extProvider.formatter.transactionResponse.bind(extProvider.formatter)
+  extProvider.formatter.transactionResponse = (transaction) => {
     const tx = formatTxResponse(transaction) as any
     tx.txType = transaction.txType
     tx.queueOrigin = transaction.queueOrigin
@@ -55,15 +55,15 @@ export const injectL2Context = (l1Provider: providers.JsonRpcProvider) => {
     return tx
   }
 
-  const formatReceiptResponse = provider.formatter.receipt.bind(provider.formatter)
-  provider.formatter.receipt = (value) => {
+  const formatReceiptResponse = extProvider.formatter.receipt.bind(extProvider.formatter)
+  extProvider.formatter.receipt = (value) => {
     const receipt = formatReceiptResponse(value) as any
     receipt.nvmTransactionHash = value.nvmTransactionHash
     receipt.operatorSignature = value.operatorSignature
     return receipt
   }
 
-  return provider
+  return extProvider
 }
 
 export const formatNVMTx = (l2Tx) => {

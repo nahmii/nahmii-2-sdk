@@ -1,7 +1,7 @@
 import { ethers, BigNumber } from 'ethers'
 import * as rlp from './rlp'
 import { toHexString, toRpcHexString, remove0x } from './string-format'
-import { injectL2Context, formatNVMTx, formatNVMReceipt } from './l2context'
+import { setFormattersForTransactions, formatNVMTx, formatNVMReceipt } from './l2context'
 
 import L1CrossDomainMessengerMetadata from './contract-metadata/iNVM_L1CrossDomainMessenger.json'
 import L2CrossDomainMessengerMetadata from './contract-metadata/NVM_L2CrossDomainMessenger.json'
@@ -155,10 +155,9 @@ export const getMessagesAndProofsForL2Transaction = async (
     l2RpcProvider = new ethers.providers.JsonRpcProvider(l2RpcProvider)
   }
 
-  const l2RpcProviderInjected = injectL2Context(l2RpcProvider)
+  const l2Receipt = await setFormattersForTransactions(l2RpcProvider).getTransactionReceipt(l2TransactionHash)
 
-  const l2Receipt = await l2RpcProviderInjected.getTransactionReceipt(l2TransactionHash)
-  if (l2Receipt === null) {
+  if (l2Receipt === null || l2Receipt.root == null) {
     throw new Error(`unable to find receipt with hash: ${l2TransactionHash}`)
   }
 
@@ -259,7 +258,7 @@ export const relayXDomainMessages = async (
   l1Signer: ethers.Signer,
   maxRetries: number = 5
 ): Promise<void> => {
-  const extendedL2Provider = injectL2Context(l2RpcProvider)
+  const extendedL2Provider = setFormattersForTransactions(l2RpcProvider)
   const extendedL2Tx = await extendedL2Provider.getTransaction(l2TransactionHash)
   const extendedL2Receipt = await extendedL2Provider.getTransactionReceipt(l2TransactionHash)
 
@@ -303,8 +302,7 @@ export const relayXDomainMessages = async (
       } catch (e: unknown) {
         if (e instanceof Error) {
           // TODO: Rethink error information feedback
-          if (e.message.includes('execution failed due to an exception') ||
-            e.message.includes('Nonce too low')) {
+          if (e.message.includes('execution failed due to an exception') || e.message.includes('Nonce too low')) {
             if (errorCounter < maxRetries) {
               errorCounter++
               await sleep(1000)
