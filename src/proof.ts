@@ -1,7 +1,7 @@
 import { ethers, BigNumber } from 'ethers'
 import * as rlp from './rlp'
 import { toHexString, toRpcHexString, remove0x } from './string-format'
-import { injectL2Context, formatNVMTx, formatNVMReceipt } from './l2context'
+import { setFormattersForTransactions, formatNVMTx, formatNVMReceipt } from './l2context'
 
 import L1CrossDomainMessengerMetadata from './contract-metadata/iNVM_L1CrossDomainMessenger.json'
 import L2CrossDomainMessengerMetadata from './contract-metadata/NVM_L2CrossDomainMessenger.json'
@@ -62,11 +62,7 @@ const getStateTrieProof = async (
   address: string,
   slot: string
 ): Promise<StateTrieProof> => {
-  const proof = await l2RpcProvider.send('eth_getProof', [
-    address,
-    [slot],
-    toRpcHexString(blockNumber),
-  ])
+  const proof = await l2RpcProvider.send('eth_getProof', [address, [slot], toRpcHexString(blockNumber)])
 
   return {
     accountProof: toHexString(rlp.encode(proof.accountProof)),
@@ -81,9 +77,7 @@ const getStateTrieProof = async (
  * @returns Encoded message.
  */
 const encodeCrossDomainMessage = (message: CrossDomainMessage): string => {
-  return new ethers.utils.Interface(
-    L2CrossDomainMessengerMetadata.abi
-  ).encodeFunctionData('relayMessage', [
+  return new ethers.utils.Interface(L2CrossDomainMessengerMetadata.abi).encodeFunctionData('relayMessage', [
     message.target,
     message.sender,
     message.message,
@@ -110,9 +104,7 @@ export const getMessagesByTransactionHash = async (
     throw new Error(`unable to find tx with hash: ${l2TransactionHash}`)
   }
 
-  const L2CrossDomainMessengerInterface = new ethers.utils.Interface(
-    L2CrossDomainMessengerMetadata.abi
-  )
+  const L2CrossDomainMessengerInterface = new ethers.utils.Interface(L2CrossDomainMessengerMetadata.abi)
   const l2CrossDomainMessenger = new ethers.Contract(
     l2CrossDomainMessengerAddress,
     L2CrossDomainMessengerInterface,
@@ -132,11 +124,7 @@ export const getMessagesByTransactionHash = async (
     .filter((messageEvent) => messageEvent?.args?.message !== undefined)
     .map((sentMessageEvent) => {
       const encodedMessage = sentMessageEvent?.args?.message
-      const decodedMessage =
-        l2CrossDomainMessenger.interface.decodeFunctionData(
-          'relayMessage',
-          encodedMessage
-        )
+      const decodedMessage = l2CrossDomainMessenger.interface.decodeFunctionData('relayMessage', encodedMessage)
 
       return {
         target: decodedMessage._target,
@@ -153,40 +141,28 @@ export const getMessagesByTransactionHash = async (
  * Finds all L2 => L1 messages sent in a given L2 transaction and generates proofs for each of
  * those messages.
  *
- * @param l1RpcProvider L1 RPC provider.
  * @param l2RpcProvider L2 RPC provider.
  * @param l2CrossDomainMessengerAddress Address of the L2CrossDomainMessenger.
  * @param l2TransactionHash L2 transaction hash to generate a relay transaction for.
  * @returns An array of messages sent in the transaction and a proof of inclusion for each.
  */
 export const getMessagesAndProofsForL2Transaction = async (
-  l1RpcProvider: ethers.providers.JsonRpcProvider | string,
   l2RpcProvider: ethers.providers.JsonRpcProvider | string,
   l2CrossDomainMessengerAddress: string,
   l2TransactionHash: string
 ): Promise<CrossDomainMessagePair[]> => {
-  if (typeof l1RpcProvider === 'string') {
-    l1RpcProvider = new ethers.providers.JsonRpcProvider(l1RpcProvider)
-  }
   if (typeof l2RpcProvider === 'string') {
     l2RpcProvider = new ethers.providers.JsonRpcProvider(l2RpcProvider)
   }
 
-  const l2RpcProviderInjected = injectL2Context(l2RpcProvider)
+  const l2Receipt = await setFormattersForTransactions(l2RpcProvider).getTransactionReceipt(l2TransactionHash)
 
-  const l2Receipt = await l2RpcProviderInjected.getTransactionReceipt(
-    l2TransactionHash
-  )
-  if (l2Receipt === null) {
+  if (l2Receipt === null || l2Receipt.root == null) {
     throw new Error(`unable to find receipt with hash: ${l2TransactionHash}`)
   }
 
   // Find every message that was sent during this transaction. We'll then attach a proof for each.
-  const messages = await getMessagesByTransactionHash(
-    l2RpcProvider,
-    l2CrossDomainMessengerAddress,
-    l2TransactionHash
-  )
+  const messages = await getMessagesByTransactionHash(l2RpcProvider, l2CrossDomainMessengerAddress, l2TransactionHash)
 
   const messagePairs: CrossDomainMessagePair[] = []
   for (const message of messages) {
@@ -197,10 +173,8 @@ export const getMessagesAndProofsForL2Transaction = async (
     // You can read more about how Solidity storage slots are computed for mappings here:
     // https://docs.soliditylang.org/en/v0.8.4/internals/layout_in_storage.html#mappings-and-dynamic-arrays
     const messageSlot = ethers.utils.keccak256(
-      ethers.utils.keccak256(
-        encodeCrossDomainMessage(message) +
-          remove0x(l2CrossDomainMessengerAddress)
-      ) + '00'.repeat(32)
+      ethers.utils.keccak256(encodeCrossDomainMessage(message) + remove0x(l2CrossDomainMessengerAddress)) +
+        '00'.repeat(32)
     )
 
     // We need a Merkle trie proof for the given storage slot. This allows us to prove to L1 that
@@ -234,7 +208,7 @@ export const getMessagesAndProofsForL2Transaction = async (
  * @param ms Number of milliseconds to sleep.
  */
 export const sleep = async (ms: number): Promise<void> => {
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<void>((resolve, _) => {
     setTimeout(() => {
       resolve()
     }, ms)
@@ -246,7 +220,7 @@ export const sleep = async (ms: number): Promise<void> => {
  *
  * @param l2TokenAddress L2 address of the to be withdrawn token.
  * @param withdrawAmount The amount to withdraw.
- * @param l2RpcProvider L2 provider.
+ * @param l2Provider L2 provider.
  * @param signer L2 transaction signer.
  * @returns Returns the transaction response containing metadata for the withdrawal transaction.
  */
@@ -256,14 +230,8 @@ export const withdraw = async (
   l2Provider: ethers.providers.JsonRpcProvider,
   signer: ethers.Signer
 ): Promise<ethers.providers.TransactionResponse> => {
-  const L2StandardBridgeInterface = new ethers.utils.Interface(
-    L2StandardBridgeMetadata.abi
-  )
-  const contract = new ethers.Contract(
-    predeploys.NVM_L2StandardBridge,
-    L2StandardBridgeInterface,
-    l2Provider
-  )
+  const L2StandardBridgeInterface = new ethers.utils.Interface(L2StandardBridgeMetadata.abi)
+  const contract = new ethers.Contract(predeploys.NVM_L2StandardBridge, L2StandardBridgeInterface, l2Provider)
   const signerWithProvider = signer.connect(l2Provider)
   const transactionResponse = await contract
     .connect(signerWithProvider)
@@ -290,31 +258,20 @@ export const relayXDomainMessages = async (
   l1Signer: ethers.Signer,
   maxRetries: number = 5
 ): Promise<void> => {
-  const extendedL2Provider = injectL2Context(l2RpcProvider)
-  const extendedL2Tx = await extendedL2Provider.getTransaction(
-    l2TransactionHash
-  )
-  const extendedL2Receipt = await extendedL2Provider.getTransactionReceipt(
-    l2TransactionHash
-  )
+  const extendedL2Provider = setFormattersForTransactions(l2RpcProvider)
+  const extendedL2Tx = await extendedL2Provider.getTransaction(l2TransactionHash)
+  const extendedL2Receipt = await extendedL2Provider.getTransactionReceipt(l2TransactionHash)
 
   const nvmTx = formatNVMTx(extendedL2Tx)
   const nvmReceipt = formatNVMReceipt(extendedL2Receipt)
 
-  const L1CrossDomainMessengerInterface = new ethers.utils.Interface(
-    L1CrossDomainMessengerMetadata.abi
-  )
-  const l1Messenger = new ethers.Contract(
-    l1CrossDomainMessengerAddress,
-    L1CrossDomainMessengerInterface,
-    l1RpcProvider
-  )
+  const L1CrossDomainMessengerInterface = new ethers.utils.Interface(L1CrossDomainMessengerMetadata.abi)
+  const l1Messenger = new ethers.Contract(l1CrossDomainMessengerAddress, L1CrossDomainMessengerInterface, l1RpcProvider)
 
   let messagePairs: CrossDomainMessagePair[] = []
   while (true) {
     try {
       messagePairs = await getMessagesAndProofsForL2Transaction(
-        l1RpcProvider,
         extendedL2Provider,
         predeploys.NVM_L2CrossDomainMessenger,
         l2TransactionHash
@@ -338,23 +295,14 @@ export const relayXDomainMessages = async (
       try {
         const result = await l1Messenger
           .connect(signerWithProvider)
-          .relayMessage(
-            message.target,
-            message.sender,
-            message.message,
-            message.messageNonce,
-            nvmTx,
-            nvmReceipt,
-            proof
-          )
+          .relayMessage(message.target, message.sender, message.message, message.messageNonce, nvmTx, nvmReceipt, proof)
         await result.wait()
         errorCounter = 0
         break
       } catch (e: unknown) {
         if (e instanceof Error) {
           // TODO: Rethink error information feedback
-          if (e.message.includes('execution failed due to an exception') ||
-            e.message.includes('Nonce too low')) {
+          if (e.message.includes('execution failed due to an exception') || e.message.includes('Nonce too low')) {
             if (errorCounter < maxRetries) {
               errorCounter++
               await sleep(1000)

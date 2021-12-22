@@ -39,7 +39,7 @@ export const fromHexString = (inp: Buffer | string): Buffer => {
     return Buffer.from(inp.slice(2), 'hex')
   }
 
-  return Buffer.from(inp) //Converts aBigNumberish to a HexString, with no unneces
+  return Buffer.from(inp)
 }
 
 /**
@@ -79,5 +79,4 @@ export const padHexString = (str: string, length: number): string => {
   }
 }
 
-export const encodeHex = (val: any, len: number) =>
-  remove0x(BigNumber.from(val).toHexString()).padStart(len, '0')
+export const encodeHex = (val: any, len: number) => remove0x(BigNumber.from(val).toHexString()).padStart(len, '0')
