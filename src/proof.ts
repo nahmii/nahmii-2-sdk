@@ -30,6 +30,21 @@ interface CrossDomainMessageProof {
   storageTrieWitness: string
 }
 
+export interface RelayResult {
+  exceptions?: Error[]
+  success: relayResults
+  message: CrossDomainMessage
+  messageProof: CrossDomainMessageProof
+  transactionResponse?: ethers.providers.TransactionResponse
+}
+
+export enum relayResults {
+  success,
+  alreadyRelayed,
+  failed,
+  notSent,
+}
+
 const predeploys = {
   NVM_L2ToL1MessagePasser: '0x4200000000000000000000000000000000000000',
   NVM_L1MessageSender: '0x4200000000000000000000000000000000000001',
@@ -249,6 +264,7 @@ export const withdraw = async (
  * @param l2RpcProvider L2 provider.
  * @param l1Signer L1 transaction signer.
  * @param maxRetries maximum retries for relaying messages.
+ * @returns an array containing the results of all the messages that were to be sent
  */
 export const relayXDomainMessages = async (
   l2TransactionHash: string,
@@ -257,7 +273,7 @@ export const relayXDomainMessages = async (
   l2RpcProvider: ethers.providers.JsonRpcProvider,
   l1Signer: ethers.Signer,
   maxRetries: number = 5
-): Promise<void> => {
+): Promise<RelayResult[]> => {
   const extendedL2Provider = setFormattersForTransactions(l2RpcProvider)
   const extendedL2Tx = await extendedL2Provider.getTransaction(l2TransactionHash)
   const extendedL2Receipt = await extendedL2Provider.getTransactionReceipt(l2TransactionHash)
@@ -274,32 +290,41 @@ export const relayXDomainMessages = async (
     l2TransactionHash
   )
 
+  const results: RelayResult[] = messagePairs.map((messagePair): RelayResult => {
+    return { success: relayResults.notSent, message: messagePair.message, messageProof: messagePair.proof }
+  })
   const signerWithProvider = l1Signer.connect(l1RpcProvider)
-  for (const { message, proof } of messagePairs) {
+  for (const [index, { message, proof }] of messagePairs.entries()) {
     let errorCounter = 0
+    const errors: Error[] = []
+    results[index].exceptions = errors
     while (true) {
       try {
         const result = await l1Messenger
           .connect(signerWithProvider)
           .relayMessage(message.target, message.sender, message.message, message.messageNonce, nvmTx, nvmReceipt, proof)
-        await result.wait()
-        errorCounter = 0
+        const txResponse = await result.wait()
+        results[index] = { ...results[index], success: relayResults.success, transactionResponse: txResponse }
         break
       } catch (e: unknown) {
         if (e instanceof Error) {
-          // TODO: Rethink error information feedback
+          if (e.message.includes('message has already been received')) {
+            results[index].success = relayResults.alreadyRelayed
+            break
+          }
           if (e.message.includes('execution failed due to an exception') || e.message.includes('Nonce too low')) {
             if (errorCounter < maxRetries) {
               errorCounter++
               await sleep(1000)
               continue
             }
-          } else if (e.message.includes('message has already been received')) {
-            break
           }
+          errors.push(e)
         }
-        throw e
+        results[index].success = relayResults.failed
+        return results // Returns early like the throw that was here before
       }
     }
   }
+  return results
 }
