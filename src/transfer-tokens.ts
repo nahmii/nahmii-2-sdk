@@ -1,6 +1,8 @@
 import { BigNumber, ethers } from 'ethers'
 import { predeploys } from './predeploys'
 import L2StandardBridgeMetadata from './contract-metadata/NVM_L2StandardBridge.json'
+import { relayL2ToL1Messages } from './l2-to-L1-message-relaying'
+export { relayL2ToL1Messages }
 
 /**
  * Initiate withdrawals.
@@ -26,3 +28,5 @@ export const initiateWithdrawal = async (
 
   return transactionResponse
 }
+
+export const finalizeWithdrawal = relayL2ToL1Messages

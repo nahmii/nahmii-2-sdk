@@ -1,6 +1,5 @@
 import { Wallet, ethers, BigNumber } from 'ethers'
-import { relayL2ToL1Messages } from '@src/l2-to-L1-message-relaying'
-import { initiateWithdrawal } from '@src/transfer-tokens'
+import { finalizeWithdrawal, initiateWithdrawal } from '@src/transfer-tokens'
 
 describe('relay message', () => {
   let txHash: string
@@ -23,6 +22,6 @@ describe('relay message', () => {
   xit('should relay message', async () => {
     // TODO: Pass a withdraw transaction hash
     txHash = ''
-    await relayL2ToL1Messages(txHash, l1CrossDomainMessengerAddress, l1RPCProvider, l2RPCProvider, l1Wallet)
+    await finalizeWithdrawal(txHash, l1CrossDomainMessengerAddress, l1RPCProvider, l2RPCProvider, l1Wallet)
   }).timeout(300000)
 })
