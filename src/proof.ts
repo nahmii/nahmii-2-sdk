@@ -35,7 +35,7 @@ export interface RelayResult {
   success: relayResults
   message: CrossDomainMessage
   messageProof: CrossDomainMessageProof
-  transactionResponse?: ethers.providers.TransactionResponse
+  transactionReceipt?: ethers.providers.TransactionReceipt
 }
 
 export enum relayResults {
@@ -310,8 +310,8 @@ export const relayXDomainMessages = async (
         if (transactionCallback) {
           transactionCallback(result)
         }
-        const txResponse = await result.wait()
-        results[index] = { ...results[index], success: relayResults.success, transactionResponse: txResponse }
+        const txReceipt = await result.wait()
+        results[index] = { ...results[index], success: relayResults.success, transactionReceipt: txReceipt }
         break
       } catch (e: unknown) {
         if (e instanceof Error) {
