@@ -268,25 +268,11 @@ export const relayXDomainMessages = async (
   const L1CrossDomainMessengerInterface = new ethers.utils.Interface(L1CrossDomainMessengerMetadata.abi)
   const l1Messenger = new ethers.Contract(l1CrossDomainMessengerAddress, L1CrossDomainMessengerInterface, l1RpcProvider)
 
-  let messagePairs: CrossDomainMessagePair[] = []
-  while (true) {
-    try {
-      messagePairs = await getMessagesAndProofsForL2Transaction(
-        extendedL2Provider,
-        predeploys.NVM_L2CrossDomainMessenger,
-        l2TransactionHash
-      )
-      break
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        if (e.message.includes('unable to find state root batch for tx')) {
-          await sleep(1000)
-          continue
-        }
-        throw e
-      }
-    }
-  }
+  const messagePairs = await getMessagesAndProofsForL2Transaction(
+    extendedL2Provider,
+    predeploys.NVM_L2CrossDomainMessenger,
+    l2TransactionHash
+  )
 
   const signerWithProvider = l1Signer.connect(l1RpcProvider)
   for (const { message, proof } of messagePairs) {
