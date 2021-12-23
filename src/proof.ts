@@ -264,6 +264,7 @@ export const withdraw = async (
  * @param l2RpcProvider L2 provider.
  * @param l1Signer L1 transaction signer.
  * @param maxRetries maximum retries for relaying messages.
+ * @returns an array containing the results of all the messages that were to be sent
  */
 export const relayXDomainMessages = async (
   l2TransactionHash: string,
