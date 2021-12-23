@@ -64,7 +64,6 @@
   "dependencies": {
     "buffer": "^6.0.3",
     "ethers": "^5.5.2",
-    "lodash": "^4.17.21",
-    "rlp": "^2.2.7"
+    "lodash": "^4.17.21"
   }
 }
