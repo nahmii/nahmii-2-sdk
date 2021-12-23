@@ -1,6 +1,6 @@
 import { BigNumber, ethers } from 'ethers'
 import { predeploys } from './predeploys'
-import L2StandardBridgeMetadata from '@contracts/NVM_L2StandardBridge.json'
+import L2StandardBridgeMetadata from './contract-metadata/NVM_L2StandardBridge.json'
 
 /**
  * Initiate withdrawals.
