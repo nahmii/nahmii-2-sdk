@@ -13,7 +13,7 @@ interface StateTrieProof {
 }
 
 interface CrossDomainMessagePair {
-  messageToSend: CrossDomainMessage
+  message: CrossDomainMessage
   proof: CrossDomainMessageProof
 }
 
@@ -209,7 +209,7 @@ export const getMessagesAndProofsForL2Transaction = async (
     }
 
     messagePairs.push({
-      messageToSend: message,
+      message,
       proof,
     })
   }
@@ -291,10 +291,10 @@ export const relayXDomainMessages = async (
   )
 
   const results: RelayResult[] = messagePairs.map((messagePair): RelayResult => {
-    return { success: relayResults.notSent, message: messagePair.messageToSend, messageProof: messagePair.proof }
+    return { success: relayResults.notSent, message: messagePair.message, messageProof: messagePair.proof }
   })
   const signerWithProvider = l1Signer.connect(l1RpcProvider)
-  for (const [index, { messageToSend, proof }] of messagePairs.entries()) {
+  for (const [index, { message, proof }] of messagePairs.entries()) {
     let errorCounter = 0
     const errors: Error[] = []
     results[index].exceptions = errors
@@ -302,15 +302,7 @@ export const relayXDomainMessages = async (
       try {
         const result = await l1Messenger
           .connect(signerWithProvider)
-          .relayMessage(
-            messageToSend.target,
-            messageToSend.sender,
-            messageToSend.message,
-            messageToSend.messageNonce,
-            nvmTx,
-            nvmReceipt,
-            proof
-          )
+          .relayMessage(message.target, message.sender, message.message, message.messageNonce, nvmTx, nvmReceipt, proof)
         const txResponse = await result.wait()
         results[index] = { ...results[index], success: relayResults.success, transactionResponse: txResponse }
         break
