@@ -264,7 +264,8 @@ export const withdraw = async (
  * @param l1RpcProvider L1 provider.
  * @param l2RpcProvider L2 provider.
  * @param l1Signer L1 transaction signer.
- * @param maxRetries maximum retries for relaying messages.
+ * @param maxRetries maximum retries if error when relaying messages. Default = 5
+ * @param confirms Amount of blocks to confirm a transaction. Default = 1
  * @param transactionCallback will be called with TransactionResponse after each message is relayed,
  * but before waiting for the result.
  * @returns an array containing the results of all the messages that were to be sent
@@ -276,6 +277,7 @@ export const relayXDomainMessages = async (
   l2RpcProvider: ethers.providers.JsonRpcProvider,
   l1Signer: ethers.Signer,
   maxRetries: number = 5,
+  confirms: number = 1,
   transactionCallback?: (response: ethers.providers.TransactionResponse) => void
 ): Promise<RelayResult[]> => {
   const extendedL2Provider = setFormattersForTransactions(l2RpcProvider)
@@ -310,7 +312,7 @@ export const relayXDomainMessages = async (
         if (transactionCallback) {
           transactionCallback(result)
         }
-        const txReceipt = await result.wait()
+        const txReceipt = await result.wait(confirms)
         results[index] = { ...results[index], success: relayResults.success, transactionReceipt: txReceipt }
         break
       } catch (e: unknown) {
