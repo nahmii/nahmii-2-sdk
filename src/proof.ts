@@ -307,10 +307,10 @@ export const relayXDomainMessages = async (
         const result = await l1Messenger
           .connect(signerWithProvider)
           .relayMessage(message.target, message.sender, message.message, message.messageNonce, nvmTx, nvmReceipt, proof)
-        const txResponse = await result.wait()
         if (transactionCallback) {
-          transactionCallback(txResponse)
+          transactionCallback(result)
         }
+        const txResponse = await result.wait()
         results[index] = { ...results[index], success: relayResults.success, transactionResponse: txResponse }
         break
       } catch (e: unknown) {
