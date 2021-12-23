@@ -1,5 +1,5 @@
 import { Wallet, ethers, BigNumber } from 'ethers'
-import { relayXDomainMessages, withdraw } from '@src/proof'
+import { finalizeWithdrawal, initiateWithdrawal } from '@src/transfer-tokens'
 
 describe('relay message', () => {
   let txHash: string
@@ -12,7 +12,7 @@ describe('relay message', () => {
   xit('initialize withdrawal on L2', async () => {
     const l2TokenAddress = '0x4200000000000000000000000000000000000006'
     const withdrawAmount = BigNumber.from('1000000000000000000')
-    const txResponse = await withdraw(l2TokenAddress, withdrawAmount, l2RPCProvider, l1Wallet)
+    const txResponse = await initiateWithdrawal(l2TokenAddress, withdrawAmount, l2RPCProvider, l1Wallet)
     const receipt = await txResponse.wait()
     console.log(receipt)
     // const receipt = (await result).wait()
@@ -22,6 +22,6 @@ describe('relay message', () => {
   xit('should relay message', async () => {
     // TODO: Pass a withdraw transaction hash
     txHash = ''
-    await relayXDomainMessages(txHash, l1CrossDomainMessengerAddress, l1RPCProvider, l2RPCProvider, l1Wallet)
+    await finalizeWithdrawal(txHash, l1CrossDomainMessengerAddress, l1RPCProvider, l2RPCProvider, l1Wallet)
   }).timeout(300000)
 })
