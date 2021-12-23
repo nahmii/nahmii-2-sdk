@@ -35,7 +35,7 @@ export interface RelayResult {
   success: relayResults
   message: CrossDomainMessage
   messageProof: CrossDomainMessageProof
-  transactionResponse?: ethers.providers.TransactionResponse
+  transactionReceipt?: ethers.providers.TransactionReceipt
 }
 
 export enum relayResults {
@@ -257,6 +257,7 @@ export const withdraw = async (
 
 /**
  * Relays all L2 => L1 messages found in a given L2 transaction.
+ * The function will block until all messages are on the L1 chain.
  *
  * @param l2TransactionHash L2 transaction hash to find the messages in.
  * @param l1CrossDomainMessengerAddress Address of the l1CrossDomainMessenger.
@@ -264,6 +265,8 @@ export const withdraw = async (
  * @param l2RpcProvider L2 provider.
  * @param l1Signer L1 transaction signer.
  * @param maxRetries maximum retries for relaying messages.
+ * @param transactionCallback will be called with TransactionResponse after each message is relayed,
+ * but before waiting for the result.
  * @returns an array containing the results of all the messages that were to be sent
  */
 export const relayXDomainMessages = async (
@@ -272,7 +275,8 @@ export const relayXDomainMessages = async (
   l1RpcProvider: ethers.providers.JsonRpcProvider,
   l2RpcProvider: ethers.providers.JsonRpcProvider,
   l1Signer: ethers.Signer,
-  maxRetries: number = 5
+  maxRetries: number = 5,
+  transactionCallback?: (response: ethers.providers.TransactionResponse) => void
 ): Promise<RelayResult[]> => {
   const extendedL2Provider = setFormattersForTransactions(l2RpcProvider)
   const extendedL2Tx = await extendedL2Provider.getTransaction(l2TransactionHash)
@@ -303,8 +307,11 @@ export const relayXDomainMessages = async (
         const result = await l1Messenger
           .connect(signerWithProvider)
           .relayMessage(message.target, message.sender, message.message, message.messageNonce, nvmTx, nvmReceipt, proof)
-        const txResponse = await result.wait()
-        results[index] = { ...results[index], success: relayResults.success, transactionResponse: txResponse }
+        if (transactionCallback) {
+          transactionCallback(result)
+        }
+        const txReceipt = await result.wait()
+        results[index] = { ...results[index], success: relayResults.success, transactionReceipt: txReceipt }
         break
       } catch (e: unknown) {
         if (e instanceof Error) {
