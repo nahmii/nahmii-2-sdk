@@ -21,10 +21,7 @@ export const initiateWithdrawal = async (
 ): Promise<ethers.providers.TransactionResponse> => {
   const L2StandardBridgeInterface = new ethers.utils.Interface(L2StandardBridgeMetadata.abi)
   const contract = new ethers.Contract(predeploys.NVM_L2StandardBridge, L2StandardBridgeInterface, l2Provider)
-  const signerWithProvider = signer.connect(l2Provider)
-  const transactionResponse = await contract
-    .connect(signerWithProvider)
-    .withdraw(l2TokenAddress, withdrawAmount, 0, '0x')
+  const transactionResponse = await contract.connect(signer).withdraw(l2TokenAddress, withdrawAmount, 0, '0x')
 
   return transactionResponse
 }
