@@ -1,9 +1,9 @@
 {
   "name": "@nahmii/sdk",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "The `@nahmii/sdk` package is an SDK to interact with Nahmii 2.0.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/index",
+  "types": "dist/index",
   "files": [
     "dist/**/*.js",
     "dist/**/*.ts",
