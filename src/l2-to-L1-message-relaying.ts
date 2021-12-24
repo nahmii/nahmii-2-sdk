@@ -217,7 +217,7 @@ export const relayL2ToL1Messages = async (
   const results: RelayResult[] = messagePairs.map((messagePair): RelayResult => {
     return { success: relayResults.notSent, message: messagePair.message, messageProof: messagePair.proof }
   })
-  const signerWithProvider = l1Signer.connect(l1RpcProvider)
+
   for (const [index, { message, proof }] of messagePairs.entries()) {
     let errorCounter = 0
     const errors: Error[] = []
@@ -225,7 +225,7 @@ export const relayL2ToL1Messages = async (
     while (true) {
       try {
         const result = await l1Messenger
-          .connect(signerWithProvider)
+          .connect(l1Signer)
           .relayMessage(message.target, message.sender, message.message, message.messageNonce, nvmTx, nvmReceipt, proof)
         if (transactionCallback) {
           transactionCallback(result)
