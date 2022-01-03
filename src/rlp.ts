@@ -2,7 +2,7 @@ import { Buffer } from 'buffer'
 import { Decoded, Input, List } from '@src/types'
 
 // Re-export
-export { Decoded, Input, List }
+export type { Decoded, Input, List }
 
 /**
  * RLP Encoding based on: https://github.com/ethereum/wiki/wiki/%5BEnglish%5D-RLP

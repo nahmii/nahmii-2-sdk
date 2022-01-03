@@ -1,7 +1,7 @@
 import { ethers } from 'ethers'
 import { setTxOptionsForL2, formatNVMTx, formatNVMReceipt } from './l2-tx-formatting'
 import { CrossDomainMessageProof, GetTransactionProof } from './tx-proof'
-export { CrossDomainMessageProof }
+export type { CrossDomainMessageProof }
 import { predeploys } from './predeploys'
 
 import L1CrossDomainMessengerMetadata from './contract-metadata/iNVM_L1CrossDomainMessenger.json'

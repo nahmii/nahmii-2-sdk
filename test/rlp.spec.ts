@@ -383,7 +383,7 @@ describe('recursive typings', () => {
 })
 
 describe('offical tests', () => {
-  const officalTests = FixtureRLPTest.tests
+  const officalTests = FixtureRLPTest.tests as any
 
   // eslint-disable-next-line no-restricted-syntax
   // eslint-disable-next-line guard-for-in

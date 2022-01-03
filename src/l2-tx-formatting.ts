@@ -10,7 +10,7 @@ export const setTxOptionsForL2 = (provider: providers.JsonRpcProvider): provider
   // Pass through the state root
   const blockFormat = extProvider.formatter.block.bind(extProvider.formatter)
   extProvider.formatter.block = (block) => {
-    const b = blockFormat(block)
+    const b = blockFormat(block) as any
     b.stateRoot = block.stateRoot
     return b
   }
@@ -18,7 +18,7 @@ export const setTxOptionsForL2 = (provider: providers.JsonRpcProvider): provider
   // Pass through the state root and additional tx data
   const blockWithTransactions = extProvider.formatter.blockWithTransactions.bind(extProvider.formatter)
   extProvider.formatter.blockWithTransactions = (block) => {
-    const b = blockWithTransactions(block)
+    const b = blockWithTransactions(block) as any
     b.stateRoot = block.stateRoot
     for (let i = 0; i < b.transactions.length; i++) {
       b.transactions[i].l1BlockNumber = block.transactions[i].l1BlockNumber
@@ -66,7 +66,7 @@ export const setTxOptionsForL2 = (provider: providers.JsonRpcProvider): provider
   return extProvider
 }
 
-export const formatNVMTx = (l2Tx) => {
+export const formatNVMTx = (l2Tx: any) => {
   return {
     timestamp: l2Tx.l1Timestamp,
     blockNumber: l2Tx.l1BlockNumber,
@@ -78,7 +78,7 @@ export const formatNVMTx = (l2Tx) => {
   }
 }
 
-export const formatNVMReceipt = (l2Receipt) => {
+export const formatNVMReceipt = (l2Receipt: any) => {
   return {
     index: l2Receipt.blockNumber,
     stateRoot: l2Receipt.root,
