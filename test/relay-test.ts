@@ -2,7 +2,7 @@ import { Wallet, ethers, BigNumber } from 'ethers'
 import { finalizeWithdrawal, initiateWithdrawal } from '@src/transfer-tokens'
 
 describe('relay message', () => {
-  let txHash: string
+  const txHash = ''
   const l1CrossDomainMessengerAddress = '0x5401Ba2f9123f4019be76fca1D0B765Fd00138De'
   const l1RPCProvider = new ethers.providers.JsonRpcProvider('https://geth-ropsten.dev.hubii.net')
   const l2RPCProvider = new ethers.providers.JsonRpcProvider('https://l2.testnet.nahmii.io/')
@@ -15,13 +15,11 @@ describe('relay message', () => {
     const txResponse = await initiateWithdrawal(l2TokenAddress, withdrawAmount, l2RPCProvider, l1Wallet)
     const receipt = await txResponse.wait()
     console.log(receipt)
-    // const receipt = (await result).wait()
-    // console.log(receipt)
+    // TODO: add check to verify that the test executed successfully
   })
 
   xit('should relay message', async () => {
-    // TODO: Pass a withdraw transaction hash
-    txHash = ''
     await finalizeWithdrawal(txHash, l1CrossDomainMessengerAddress, l1RPCProvider, l2RPCProvider, l1Wallet)
   }).timeout(300000)
+  // TODO: add check to verify that the test executed successfully
 })

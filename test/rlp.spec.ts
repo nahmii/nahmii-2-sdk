@@ -194,11 +194,7 @@ describe('nested lists:', () => {
   const valueList = [
     [1, 2, 3],
     // eslint-disable-next-line prettier/prettier
-    [
-      Buffer.from([4, 5, 6]),
-      Buffer.from([7, 8, 9]),
-      [Buffer.from([0]), Buffer.from('abcd', 'hex')],
-    ],
+    [Buffer.from([4, 5, 6]), Buffer.from([7, 8, 9]), [Buffer.from([0]), Buffer.from('abcd', 'hex')]],
   ]
   let encoded: Buffer
   it('encode a nested list', () => {
@@ -227,11 +223,7 @@ describe('typed lists:', () => {
   const valueList = [
     [1, 2, 3],
     // eslint-disable-next-line prettier/prettier
-    [
-      new Uint8Array([4, 5, 6]),
-      new Uint8Array([7, 8, 9]),
-      [new Uint8Array([0]), Buffer.from('abcd', 'hex')],
-    ],
+    [new Uint8Array([4, 5, 6]), new Uint8Array([7, 8, 9]), [new Uint8Array([0]), Buffer.from('abcd', 'hex')]],
   ]
 
   // equivalent to list of values above
