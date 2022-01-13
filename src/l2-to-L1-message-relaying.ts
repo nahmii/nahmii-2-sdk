@@ -4,8 +4,8 @@ import { CrossDomainMessageProof, GetTransactionProof } from './tx-proof'
 export { CrossDomainMessageProof }
 import { predeploys } from './predeploys'
 
-import L1CrossDomainMessengerMetadata from './contract-metadata/iNVM_L1CrossDomainMessenger.json'
-import L2CrossDomainMessengerMetadata from './contract-metadata/NVM_L2CrossDomainMessenger.json'
+import L1CrossDomainMessengerABI from './contract-metadata/L1CrossDomainMessengerABI.json'
+import L2CrossDomainMessengerABI from './contract-metadata/L2CrossDomainMessengerABI.json'
 
 interface CrossDomainMessagePair {
   message: CrossDomainMessage
@@ -68,7 +68,7 @@ export const getL2ToL1MessagesByBlock = async (
   l2CrossDomainMessengerAddress: string,
   l2Block: number | string
 ): Promise<CrossDomainMessage[]> => {
-  const L2CrossDomainMessengerInterface = new ethers.utils.Interface(L2CrossDomainMessengerMetadata.abi)
+  const L2CrossDomainMessengerInterface = new ethers.utils.Interface(L2CrossDomainMessengerABI)
   const l2CrossDomainMessenger = new ethers.Contract(
     l2CrossDomainMessengerAddress,
     L2CrossDomainMessengerInterface,
@@ -152,7 +152,7 @@ export const getMessagesAndProofsForL2Transaction = async (
  * @returns Encoded message.
  */
 const encodeCrossDomainMessage = (message: CrossDomainMessage): string => {
-  return new ethers.utils.Interface(L2CrossDomainMessengerMetadata.abi).encodeFunctionData('relayMessage', [
+  return new ethers.utils.Interface(L2CrossDomainMessengerABI).encodeFunctionData('relayMessage', [
     message.target,
     message.sender,
     message.message,
@@ -205,7 +205,7 @@ export const relayL2ToL1Messages = async (
   const nvmTx = formatNVMTx(extendedL2Tx)
   const nvmReceipt = formatNVMReceipt(extendedL2Receipt)
 
-  const L1CrossDomainMessengerInterface = new ethers.utils.Interface(L1CrossDomainMessengerMetadata.abi)
+  const L1CrossDomainMessengerInterface = new ethers.utils.Interface(L1CrossDomainMessengerABI)
   const l1Messenger = new ethers.Contract(l1CrossDomainMessengerAddress, L1CrossDomainMessengerInterface, l1RpcProvider)
 
   const messagePairs = await getMessagesAndProofsForL2Transaction(
