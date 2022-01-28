@@ -3,7 +3,7 @@ import { predeploys } from './predeploys'
 import L1StandardBridgeABI from './contract-metadata/L1StandardBridgeABI.json'
 import L2StandardBridgeABI from './contract-metadata/L2StandardBridgeABI.json'
 import { relayL2ToL1Messages } from './l2-to-L1-message-relaying'
-import { DEFAULT_GAS_L1, DEFAULT_GAS_L2 } from './constants'
+import { ETH_GAS_LIMIT_L1, DEFAULT_GAS_L2 } from './constants'
 export { relayL2ToL1Messages }
 
 /**
@@ -25,7 +25,7 @@ export const depositETH = async (
   const contract = new ethers.Contract(bridgeAddress, L1StandardBridgeInterface, l1Provider)
   const transactionResponse = await contract.connect(signer).depositETH(DEFAULT_GAS_L2, '0xFFFF', {
     value: depositAmount,
-    gasLimit: DEFAULT_GAS_L1,
+    gasLimit: ETH_GAS_LIMIT_L1,
   })
 
   return transactionResponse
