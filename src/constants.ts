@@ -1,2 +1,2 @@
-export const DEFAULT_ETH_GAS_L1 = 330_000
 export const DEFAULT_GAS_L2 = 1_300_000
+export const ETH_GAS_LIMIT_L1 = 250_000
