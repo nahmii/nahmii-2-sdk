@@ -1,4 +1,4 @@
-import {ethers} from 'ethers'
+import { ethers } from 'ethers'
 export type Input = Buffer | string | number | bigint | Uint8Array | List | null
 
 // Use interface extension instead of type alias to
@@ -11,8 +11,8 @@ export interface Decoded {
 }
 
 export interface Transfer {
-  sender: string,
-  recipient: string,
+  sender: string
+  recipient: string
   amount: number
   transactionReceipt: ethers.providers.TransactionReceipt
 }

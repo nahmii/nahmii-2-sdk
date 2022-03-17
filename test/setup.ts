@@ -1,6 +1,6 @@
 import chai from 'chai'
 import Mocha from 'mocha'
-import proxyquire from 'proxyquire';
+import proxyquire from 'proxyquire'
 import sinon = require('sinon')
 import sinonChai from 'sinon-chai'
 

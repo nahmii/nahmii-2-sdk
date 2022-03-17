@@ -1,7 +1,7 @@
-import {ethers} from 'ethers'
-import {predeploys} from './predeploys'
+import { ethers } from 'ethers'
+import { predeploys } from './predeploys'
 import L2StandardERC20ABI from './contract-metadata/L2StandardERC20ABI.json'
-import {Transfer} from "./types";
+import { Transfer } from './types'
 
 /**
  * Transfers of ETH
@@ -16,7 +16,7 @@ export const transfersOfETH = async (
   accountAddress: string,
   l2Provider: ethers.providers.JsonRpcProvider,
   fromBlock?: ethers.providers.BlockTag,
-  toBlock?: ethers.providers.BlockTag,
+  toBlock?: ethers.providers.BlockTag
 ): Promise<Array<Transfer>> => {
   return transfersOfERC20(predeploys.NVM_ETH, accountAddress, l2Provider, fromBlock, toBlock)
 }
@@ -36,29 +36,31 @@ export const transfersOfERC20 = async (
   accountAddress: string,
   l2Provider: ethers.providers.JsonRpcProvider,
   fromBlock?: ethers.providers.BlockTag,
-  toBlock?: ethers.providers.BlockTag,
+  toBlock?: ethers.providers.BlockTag
 ): Promise<Array<Transfer>> => {
   const L2StandardERC20Interface = new ethers.utils.Interface(L2StandardERC20ABI)
   const contract = new ethers.Contract(l2TokenAddress, L2StandardERC20Interface, l2Provider)
 
   const [sends, receives] = await Promise.all([
     contract.queryFilter(contract.filters.Transfer(accountAddress, undefined), fromBlock, toBlock),
-    contract.queryFilter(contract.filters.Transfer(undefined, accountAddress), fromBlock, toBlock)
+    contract.queryFilter(contract.filters.Transfer(undefined, accountAddress), fromBlock, toBlock),
   ])
 
-  const transfers = await Promise.all([...sends, ...receives].map(async ev => {
-    const [sender, recipient, amount] = ev.args as Array<any>
-    const transactionReceipt = await ev.getTransactionReceipt()
+  const transfers = await Promise.all(
+    [...sends, ...receives].map(async (ev) => {
+      const [sender, recipient, amount] = ev.args as Array<any>
+      const transactionReceipt = await ev.getTransactionReceipt()
 
-    const transfer = {
-      sender,
-      recipient,
-      amount,
-      transactionReceipt
-    }
+      const transfer = {
+        sender,
+        recipient,
+        amount,
+        transactionReceipt,
+      }
 
-    return transfer
-  }))
+      return transfer
+    })
+  )
 
-  return transfers;
+  return transfers
 }
