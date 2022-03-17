@@ -27,12 +27,14 @@ export interface RelayResult {
   transactionReceipt?: ethers.providers.TransactionReceipt
 }
 
+/* eslint-disable no-unused-vars */
 export enum relayResults {
   success,
   alreadyRelayed,
   failed,
   notSent,
 }
+/* eslint-enable no-unused-vars */
 
 /**
  * Finds all L2 => L1 messages triggered by a given L2 transaction, if the message exists.
@@ -166,7 +168,7 @@ const encodeCrossDomainMessage = (message: CrossDomainMessage): string => {
  * @param ms Number of milliseconds to sleep.
  */
 export const sleep = async (ms: number): Promise<void> => {
-  return new Promise<void>((resolve, _) => {
+  return new Promise<void>((resolve) => {
     setTimeout(() => {
       resolve()
     }, ms)
@@ -196,6 +198,7 @@ export const relayL2ToL1Messages = async (
   l1Signer: ethers.Signer,
   maxRetries: number = 5,
   confirms: number = 1,
+  // eslint-disable-next-line no-unused-vars
   transactionCallback?: (response: ethers.providers.TransactionResponse) => void
 ): Promise<RelayResult[]> => {
   const extendedL2Provider = setTxOptionsForL2(l2RpcProvider)
@@ -222,6 +225,7 @@ export const relayL2ToL1Messages = async (
     let errorCounter = 0
     const errors: Error[] = []
     results[index].exceptions = errors
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       try {
         const result = await l1Messenger

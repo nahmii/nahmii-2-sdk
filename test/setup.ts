@@ -4,8 +4,8 @@ import proxyquire from 'proxyquire'
 import sinon = require('sinon')
 import sinonChai from 'sinon-chai'
 
-const should: Chai.Should = chai.should()
-const expect: Chai.ExpectStatic = chai.expect
+const should = chai.should()
+const expect = chai.expect
 
 chai.use(sinonChai)
 
