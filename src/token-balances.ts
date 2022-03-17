@@ -5,9 +5,9 @@ import L2StandardERC20ABI from './contract-metadata/L2StandardERC20ABI.json'
 /**
  * Balance of ETH
  *
- * @param accountAddress Account address
- * @param l2Provider L1 provider
- * @param [toBlock] Tag of block
+ * @param {string} accountAddress Account address
+ * @param {ethers.providers.JsonRpcProvider} l2Provider L1 provider
+ * @param {ethers.providers.BlockTag} [toBlock] Tag of block
  * @returns Returns the string typed balance of ETH
  */
 export const balanceOfETH = async (
@@ -21,10 +21,10 @@ export const balanceOfETH = async (
 /**
  * Balance of ERC20 token
  *
- * @param contractAddress L2 address of ERC20 contract instance
- * @param accountAddress Account address
- * @param l2Provider L1 provider
- * @param [toBlock] Tag of block
+ * @param {string} contractAddress L2 address of ERC20 contract instance
+ * @param {string} accountAddress Account address
+ * @param {ethers.providers.JsonRpcProvider} l2Provider L1 provider
+ * @param {ethers.providers.BlockTag} [toBlock] Tag of block
  * @returns Returns the string typed balance of the account
  */
 export const balanceOfERC20 = async (
@@ -36,7 +36,5 @@ export const balanceOfERC20 = async (
   const L2StandardERC20Interface = new ethers.utils.Interface(L2StandardERC20ABI)
   const contract = new ethers.Contract(contractAddress, L2StandardERC20Interface, l2Provider)
   const overrides = block ? { blockTag: block } : undefined
-  const balance = await contract.balanceOf(accountAddress, overrides)
-
-  return balance
+  return contract.balanceOf(accountAddress, overrides)
 }
