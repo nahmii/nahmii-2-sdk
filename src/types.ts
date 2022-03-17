@@ -14,5 +14,11 @@ export interface Transfer {
   sender: string
   recipient: string
   amount: number
-  transactionReceipt: ethers.providers.TransactionReceipt
+  transactionResponse?: ethers.providers.TransactionResponse
+  transactionReceipt?: ethers.providers.TransactionReceipt
+}
+
+export interface TransfersOptions {
+  transactionResponse?: boolean
+  transactionReceipt?: boolean
 }

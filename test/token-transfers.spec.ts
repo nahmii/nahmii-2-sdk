@@ -1,6 +1,6 @@
 import { ethers, BigNumber } from 'ethers'
 import { expect, proxyquire, sinon } from './setup'
-import { Transfer } from '@src/types'
+import { Transfer, TransfersOptions } from '@src/types'
 import { predeploys } from '../dist'
 
 describe('token-transfers', () => {
@@ -59,17 +59,23 @@ describe('token-transfers', () => {
   })
 
   describe('transfersOfETH', () => {
-    beforeEach(async () => {
-      expectedTransfers = await Promise.all(
-        [...senderEvents, ...recipientEvents].map(async (ev) => {
-          return transformEventToTransfer(ev, predeploys.NVM_ETH)
-        })
-      )
-    })
+    describe('with from and to block tags and options for transaction response and receipt', () => {
+      beforeEach(async () => {
+        expectedTransfers = await Promise.all(
+          [...senderEvents, ...recipientEvents].map(async (ev) => {
+            return transformEventToTransfer(ev, predeploys.NVM_ETH, {
+              transactionResponse: true,
+              transactionReceipt: true,
+            })
+          })
+        )
+      })
 
-    describe('with from and to block tags', () => {
       it('should retrieve the transfers', async () => {
-        const transfers = await tokenTransfers.transfersOfETH(accountAddress1, l2Provider, fromBlock, toBlock)
+        const transfers = await tokenTransfers.transfersOfETH(accountAddress1, l2Provider, fromBlock, toBlock, {
+          transactionResponse: true,
+          transactionReceipt: true,
+        })
 
         expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, l2Provider)
 
@@ -79,7 +85,15 @@ describe('token-transfers', () => {
       })
     })
 
-    describe('without from and to block tags', () => {
+    describe('without from and to block tags or options for transaction response and receipt', () => {
+      beforeEach(async () => {
+        expectedTransfers = await Promise.all(
+          [...senderEvents, ...recipientEvents].map(async (ev) => {
+            return transformEventToTransfer(ev, predeploys.NVM_ETH)
+          })
+        )
+      })
+
       it('should retrieve the transfers', async () => {
         const transfers = await tokenTransfers.transfersOfETH(accountAddress1, l2Provider)
 
@@ -93,22 +107,29 @@ describe('token-transfers', () => {
   })
 
   describe('transfersOfERC20', () => {
-    beforeEach(async () => {
-      expectedTransfers = await Promise.all(
-        [...senderEvents, ...recipientEvents].map(async (ev) => {
-          return transformEventToTransfer(ev, contractAddress)
-        })
-      )
-    })
+    describe('with from and to block tags and options for transaction response and receipt', () => {
+      beforeEach(async () => {
+        expectedTransfers = await Promise.all(
+          [...senderEvents, ...recipientEvents].map(async (ev) => {
+            return transformEventToTransfer(ev, contractAddress, {
+              transactionResponse: true,
+              transactionReceipt: true,
+            })
+          })
+        )
+      })
 
-    describe('with from and to block tags', () => {
       it('should retrieve the transfers', async () => {
         const transfers = await tokenTransfers.transfersOfERC20(
           contractAddress,
           accountAddress1,
           l2Provider,
           fromBlock,
-          toBlock
+          toBlock,
+          {
+            transactionResponse: true,
+            transactionReceipt: true,
+          }
         )
 
         expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Provider)
@@ -119,7 +140,15 @@ describe('token-transfers', () => {
       })
     })
 
-    describe('without from and to block tags', () => {
+    describe('without from and to block tags or options for transaction response and receipt', () => {
+      beforeEach(async () => {
+        expectedTransfers = await Promise.all(
+          [...senderEvents, ...recipientEvents].map(async (ev) => {
+            return transformEventToTransfer(ev, contractAddress)
+          })
+        )
+      })
+
       it('should retrieve the transfers', async () => {
         const transfers = await tokenTransfers.transfersOfERC20(contractAddress, accountAddress1, l2Provider)
 
@@ -135,6 +164,7 @@ describe('token-transfers', () => {
 
 type TransferEvent = {
   args: [string, string, BigNumber]
+  getTransaction: () => any
   getTransactionReceipt: () => any
 }
 
@@ -146,6 +176,7 @@ const mockTransferEvents = (sender: string, recipient: string, count: number, ma
 
     events.push({
       args: [sender, recipient, amount],
+      getTransaction: async () => `response: ${amount.toString()} transferred from ${sender} to ${recipient}`,
       getTransactionReceipt: async () => `receipt: ${amount.toString()} transferred from ${sender} to ${recipient}`,
     })
   }
@@ -153,15 +184,23 @@ const mockTransferEvents = (sender: string, recipient: string, count: number, ma
   return events
 }
 
-const transformEventToTransfer = async (event: TransferEvent, contractAddress: string): Promise<Transfer> => {
+const transformEventToTransfer = async (
+  event: TransferEvent,
+  contractAddress: string,
+  options?: TransfersOptions
+): Promise<Transfer> => {
   const [sender, recipient, amount] = event.args as Array<any>
-  const transactionReceipt = await event.getTransactionReceipt()
+  const [transactionResponse, transactionReceipt] = await Promise.all([
+    options && options.transactionResponse ? await event.getTransaction() : undefined,
+    options && options.transactionReceipt ? await event.getTransactionReceipt() : undefined,
+  ])
 
   const transfer = {
     contractAddress,
     sender,
     recipient,
     amount,
+    transactionResponse,
     transactionReceipt,
   }
 
