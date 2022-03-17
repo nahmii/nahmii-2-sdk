@@ -4,7 +4,7 @@ import { expect, proxyquire, sinon } from './setup'
 describe('token-balances', () => {
   let tokenBalances
 
-  const l2TokenAddress = '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef'
+  const contractAddress = '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef'
   const accountAddress = '0xcafed00dcafed00dcafed00dcafed00dcafed00d'
 
   const l2Provider: ethers.providers.JsonRpcProvider = {} as ethers.providers.JsonRpcProvider
@@ -60,7 +60,7 @@ describe('token-balances', () => {
   describe('balanceOfERC20', () => {
     describe('with block tag', () => {
       it('should retrieve the balance', async () => {
-        const balance = await tokenBalances.balanceOfERC20(l2TokenAddress, accountAddress, l2Provider, blockTag)
+        const balance = await tokenBalances.balanceOfERC20(contractAddress, accountAddress, l2Provider, blockTag)
 
         expect(balance).to.equal(expectedBalance)
         expect(balanceOf).to.have.been.calledWithExactly(accountAddress, { blockTag })
@@ -69,7 +69,7 @@ describe('token-balances', () => {
 
     describe('without block tag', () => {
       it('should retrieve the balance', async () => {
-        const balance = await tokenBalances.balanceOfERC20(l2TokenAddress, accountAddress, l2Provider)
+        const balance = await tokenBalances.balanceOfERC20(contractAddress, accountAddress, l2Provider)
 
         expect(balance).to.equal(expectedBalance)
         expect(balanceOf).to.have.been.calledWithExactly(accountAddress, undefined)

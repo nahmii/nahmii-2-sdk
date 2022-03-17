@@ -6,7 +6,7 @@ import { predeploys } from '../dist'
 describe('token-transfers', () => {
   let tokenTransfers
 
-  const l2TokenAddress = '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef'
+  const contractAddress = '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef'
   const accountAddress1 = '0xcafed00dcafed00dcafed00dcafed00dcafed00d'
   const accountAddress2 = '0xcafebabecafebabecafebabecafebabecafebabe'
 
@@ -18,6 +18,8 @@ describe('token-transfers', () => {
   const senderEventFilter = 'some sender filter'
   const recipientEventFilter = 'some recipient filter'
 
+  let senderEvents
+  let recipientEvents
   let expectedTransfers: Transfer[]
   let queryFilter
   let TokenContract
@@ -27,10 +29,8 @@ describe('token-transfers', () => {
   })
 
   beforeEach(async () => {
-    const senderEvents = mockTransferEvents(accountAddress1, accountAddress2, 3)
-    const recipientEvents = mockTransferEvents(accountAddress2, accountAddress1, 2)
-
-    expectedTransfers = await Promise.all([...senderEvents, ...recipientEvents].map(transformEventToTransfer))
+    senderEvents = mockTransferEvents(accountAddress1, accountAddress2, 3)
+    recipientEvents = mockTransferEvents(accountAddress2, accountAddress1, 2)
 
     const Interface = sinon.stub()
 
@@ -59,6 +59,14 @@ describe('token-transfers', () => {
   })
 
   describe('transfersOfETH', () => {
+    beforeEach(async () => {
+      expectedTransfers = await Promise.all(
+        [...senderEvents, ...recipientEvents].map(async (ev) => {
+          return transformEventToTransfer(ev, predeploys.NVM_ETH)
+        })
+      )
+    })
+
     describe('with from and to block tags', () => {
       it('should retrieve the transfers', async () => {
         const transfers = await tokenTransfers.transfersOfETH(accountAddress1, l2Provider, fromBlock, toBlock)
@@ -85,17 +93,25 @@ describe('token-transfers', () => {
   })
 
   describe('transfersOfERC20', () => {
+    beforeEach(async () => {
+      expectedTransfers = await Promise.all(
+        [...senderEvents, ...recipientEvents].map(async (ev) => {
+          return transformEventToTransfer(ev, contractAddress)
+        })
+      )
+    })
+
     describe('with from and to block tags', () => {
       it('should retrieve the transfers', async () => {
         const transfers = await tokenTransfers.transfersOfERC20(
-          l2TokenAddress,
+          contractAddress,
           accountAddress1,
           l2Provider,
           fromBlock,
           toBlock
         )
 
-        expect(TokenContract).to.have.been.calledWith(l2TokenAddress, sinon.match.any, l2Provider)
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Provider)
 
         expect(transfers).to.deep.equal(expectedTransfers)
         expect(queryFilter).to.have.been.calledWith(senderEventFilter, fromBlock, toBlock)
@@ -105,9 +121,9 @@ describe('token-transfers', () => {
 
     describe('without from and to block tags', () => {
       it('should retrieve the transfers', async () => {
-        const transfers = await tokenTransfers.transfersOfERC20(l2TokenAddress, accountAddress1, l2Provider)
+        const transfers = await tokenTransfers.transfersOfERC20(contractAddress, accountAddress1, l2Provider)
 
-        expect(TokenContract).to.have.been.calledWith(l2TokenAddress, sinon.match.any, l2Provider)
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Provider)
 
         expect(transfers).to.deep.equal(expectedTransfers)
         expect(queryFilter).to.have.been.calledWith(senderEventFilter, undefined, undefined)
@@ -137,11 +153,12 @@ const mockTransferEvents = (sender: string, recipient: string, count: number, ma
   return events
 }
 
-const transformEventToTransfer = async (event: TransferEvent): Promise<Transfer> => {
+const transformEventToTransfer = async (event: TransferEvent, contractAddress: string): Promise<Transfer> => {
   const [sender, recipient, amount] = event.args as Array<any>
   const transactionReceipt = await event.getTransactionReceipt()
 
   const transfer = {
+    contractAddress,
     sender,
     recipient,
     amount,

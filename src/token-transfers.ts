@@ -24,7 +24,7 @@ export const transfersOfETH = async (
 /**
  * Transfers of ERC20 token
  *
- * @param l2TokenAddress L2 address of ERC20 token instance
+ * @param contractAddress L2 address of ERC20 contract instance
  * @param accountAddress Account address
  * @param l2Provider L1 provider
  * @param [fromBlock] Tag of from block
@@ -32,14 +32,14 @@ export const transfersOfETH = async (
  * @returns Returns the transfers of the ERC20 token
  */
 export const transfersOfERC20 = async (
-  l2TokenAddress: string,
+  contractAddress: string,
   accountAddress: string,
   l2Provider: ethers.providers.JsonRpcProvider,
   fromBlock?: ethers.providers.BlockTag,
   toBlock?: ethers.providers.BlockTag
 ): Promise<Array<Transfer>> => {
   const L2StandardERC20Interface = new ethers.utils.Interface(L2StandardERC20ABI)
-  const contract = new ethers.Contract(l2TokenAddress, L2StandardERC20Interface, l2Provider)
+  const contract = new ethers.Contract(contractAddress, L2StandardERC20Interface, l2Provider)
 
   const [sends, receives] = await Promise.all([
     contract.queryFilter(contract.filters.Transfer(accountAddress, undefined), fromBlock, toBlock),
@@ -52,6 +52,7 @@ export const transfersOfERC20 = async (
       const transactionReceipt = await ev.getTransactionReceipt()
 
       const transfer = {
+        contractAddress,
         sender,
         recipient,
         amount,
