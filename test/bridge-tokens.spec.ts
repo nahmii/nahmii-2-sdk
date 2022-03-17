@@ -1,7 +1,7 @@
 import { Wallet, ethers, BigNumber } from 'ethers'
-import { finalizeWithdrawal, initiateWithdrawal } from '@src/relay-tokens'
+import { finalizeWithdrawal, initiateWithdrawal } from '@src/bridge-tokens'
 
-describe('relay-tokens', () => {
+describe('bridge-tokens', () => {
   let txHash: string
   const l1CrossDomainMessengerAddress = '0x5401Ba2f9123f4019be76fca1D0B765Fd00138De'
   const l1RPCProvider = new ethers.providers.JsonRpcProvider('https://geth-ropsten.dev.hubii.net')
