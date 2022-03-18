@@ -11,6 +11,7 @@ export interface Decoded {
 }
 
 export interface Transfer {
+  contractAddress: string
   sender: string
   recipient: string
   amount: number
