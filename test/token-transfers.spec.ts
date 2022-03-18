@@ -1,6 +1,6 @@
 import { ethers, BigNumber } from 'ethers'
 import { expect, proxyquire, sinon } from './setup'
-import { Transfer, TransfersOptions } from '@src/types'
+import { ERC20Transfer, ERC20TransfersOptions } from '@src/types'
 import { predeploys } from '../dist'
 
 describe('token-transfers', () => {
@@ -20,7 +20,7 @@ describe('token-transfers', () => {
 
   let senderEvents
   let recipientEvents
-  let expectedTransfers: Transfer[]
+  let expectedTransfers: ERC20Transfer[]
   let queryFilter
   let TokenContract
 
@@ -187,15 +187,15 @@ const mockTransferEvents = (sender: string, recipient: string, count: number, ma
 const transformEventToTransfer = async (
   event: TransferEvent,
   contractAddress: string,
-  options?: TransfersOptions
-): Promise<Transfer> => {
+  options?: ERC20TransfersOptions
+): Promise<ERC20Transfer> => {
   const [sender, recipient, amount] = event.args as Array<any>
   const [transactionResponse, transactionReceipt] = await Promise.all([
     options && options.transactionResponse ? await event.getTransaction() : undefined,
     options && options.transactionReceipt ? await event.getTransactionReceipt() : undefined,
   ])
 
-  const transfer = {
+  return {
     contractAddress,
     sender,
     recipient,
@@ -203,6 +203,4 @@ const transformEventToTransfer = async (
     transactionResponse,
     transactionReceipt,
   }
-
-  return transfer
 }

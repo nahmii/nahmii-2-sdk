@@ -10,7 +10,7 @@ export interface Decoded {
   remainder: Buffer
 }
 
-export interface Transfer {
+export interface ERC20Transfer {
   contractAddress: string
   sender: string
   recipient: string
@@ -19,7 +19,7 @@ export interface Transfer {
   transactionReceipt?: ethers.providers.TransactionReceipt
 }
 
-export interface TransfersOptions {
+export interface ERC20TransfersOptions {
   transactionResponse?: boolean
   transactionReceipt?: boolean
 }
