@@ -1,6 +1,6 @@
 {
   "name": "@nahmii/sdk",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "The `@nahmii/sdk` package is an SDK to interact with Nahmii 2.0.",
   "main": "dist/index",
   "types": "dist/index",
@@ -42,9 +42,11 @@
   },
   "homepage": "https://github.com/nahmii/nahmii-2-sdk#readme",
   "devDependencies": {
+    "@nahmii/eslint-config": "github:nahmii/eslint-config",
     "@types/chai": "^4.3.0",
     "@types/chai-as-promised": "^7.1.4",
     "@types/mocha": "^9.0.0",
+    "@types/sinon-chai": "^3.2.8",
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
     "chai": "^4.3.4",
@@ -58,6 +60,9 @@
     "eslint-plugin-unicorn": "^39.0.0",
     "mocha": "^9.1.3",
     "prettier": "^2.5.1",
+    "proxyquire": "^2.1.3",
+    "sinon": "^13.0.1",
+    "sinon-chai": "^3.7.0",
     "ts-node": "^10.4.0",
     "typescript": "^4.5.4"
   },
