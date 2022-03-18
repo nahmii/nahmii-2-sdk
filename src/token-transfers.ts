@@ -1,7 +1,7 @@
 import { ethers } from 'ethers'
 import { predeploys } from './predeploys'
 import L2StandardERC20ABI from './contract-metadata/L2StandardERC20ABI.json'
-import { Transfer, TransfersOptions } from './types'
+import { ERC20Transfer, ERC20TransfersOptions } from './types'
 
 /**
  * Transfers of ETH
@@ -10,18 +10,18 @@ import { Transfer, TransfersOptions } from './types'
  * @param {ethers.providers.JsonRpcProvider} l2Provider L1 provider
  * @param {ethers.providers.BlockTag} [fromBlock] Tag of from block
  * @param {ethers.providers.BlockTag} [toBlock] Tag of to block
- * @param {TransfersOptions} [options] Options
+ * @param {ERC20TransfersOptions} [options] Options
  * @param {boolean} [options.transactionResponse] If true include the transaction response
  * @param {boolean} [options.transactionReceipt] If true include the transaction receipt
- * @returns Returns the transfers of ETH
+ * @returns Returns the account's transfers of ETH
  */
 export const transfersOfETH = async (
   accountAddress: string,
   l2Provider: ethers.providers.JsonRpcProvider,
   fromBlock?: ethers.providers.BlockTag,
   toBlock?: ethers.providers.BlockTag,
-  options?: TransfersOptions
-): Promise<Array<Transfer>> => {
+  options?: ERC20TransfersOptions
+): Promise<Array<ERC20Transfer>> => {
   return transfersOfERC20(predeploys.NVM_ETH, accountAddress, l2Provider, fromBlock, toBlock, options)
 }
 
@@ -33,10 +33,10 @@ export const transfersOfETH = async (
  * @param {ethers.providers.JsonRpcProvider} l2Provider L1 provider
  * @param {ethers.providers.BlockTag} [fromBlock] Tag of from block
  * @param {ethers.providers.BlockTag} [toBlock] Tag of to block
- * @param {TransfersOptions} [options] Options
+ * @param {ERC20TransfersOptions} [options] Options
  * @param {boolean} [options.transactionResponse] If true include the transaction response
  * @param {boolean} [options.transactionReceipt] If true include the transaction receipt
- * @returns Returns the transfers of ETH
+ * @returns Returns the account's transfers of the ERC20 tokens
  */
 export const transfersOfERC20 = async (
   contractAddress: string,
@@ -44,8 +44,8 @@ export const transfersOfERC20 = async (
   l2Provider: ethers.providers.JsonRpcProvider,
   fromBlock?: ethers.providers.BlockTag,
   toBlock?: ethers.providers.BlockTag,
-  options?: TransfersOptions
-): Promise<Array<Transfer>> => {
+  options?: ERC20TransfersOptions
+): Promise<Array<ERC20Transfer>> => {
   const L2StandardERC20Interface = new ethers.utils.Interface(L2StandardERC20ABI)
   const contract = new ethers.Contract(contractAddress, L2StandardERC20Interface, l2Provider)
 
@@ -62,7 +62,7 @@ export const transfersOfERC20 = async (
         options && options.transactionReceipt ? await ev.getTransactionReceipt() : undefined,
       ])
 
-      const transfer = {
+      return {
         contractAddress,
         sender,
         recipient,
@@ -70,8 +70,6 @@ export const transfersOfERC20 = async (
         transactionResponse,
         transactionReceipt,
       }
-
-      return transfer
     })
   )
 }

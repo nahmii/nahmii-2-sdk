@@ -7,8 +7,8 @@ import L2StandardERC20ABI from './contract-metadata/L2StandardERC20ABI.json'
  *
  * @param {string} accountAddress Account address
  * @param {ethers.providers.JsonRpcProvider} l2Provider L1 provider
- * @param {ethers.providers.BlockTag} [toBlock] Tag of block
- * @returns Returns the string typed balance of ETH
+ * @param {ethers.providers.BlockTag} [block] Tag of block
+ * @returns Returns the account's balance of ETH
  */
 export const balanceOfETH = async (
   accountAddress: string,
@@ -24,8 +24,8 @@ export const balanceOfETH = async (
  * @param {string} contractAddress L2 address of ERC20 contract instance
  * @param {string} accountAddress Account address
  * @param {ethers.providers.JsonRpcProvider} l2Provider L1 provider
- * @param {ethers.providers.BlockTag} [toBlock] Tag of block
- * @returns Returns the string typed balance of the account
+ * @param {ethers.providers.BlockTag} [block] Tag of block
+ * @returns Returns the account's balance of the ERC20 tokens
  */
 export const balanceOfERC20 = async (
   contractAddress: string,

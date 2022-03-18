@@ -10,6 +10,7 @@
     "dist/**/*.json"
   ],
   "scripts": {
+    "pretest": "npm run build",
     "prepublish": "tsc -p ./tsconfig.build.json",
     "build": "tsc -p ./tsconfig.build.json",
     "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register -r tsconfig-paths/register 'test/**/*.ts'",
