@@ -11,8 +11,10 @@ import { ERC20Transfer, ERC20TransfersOptions } from './types'
  * @param {ethers.providers.BlockTag} [fromBlock] Tag of from block
  * @param {ethers.providers.BlockTag} [toBlock] Tag of to block
  * @param {ERC20TransfersOptions} [options] Options
- * @param {boolean} [options.transactionResponse] If true include the transaction response
- * @param {boolean} [options.transactionReceipt] If true include the transaction receipt
+ * @param {boolean} [options.transactionResponse] If true then include the transaction response
+ * @param {boolean} [options.transactionReceipt] If true then include the transaction receipt
+ * @param {boolean} [options.isSender] If false then don't include transfers with accountAddress as sender
+ * @param {boolean} [options.isRecipient] If false then don't include transfers with accountAddress as recipient
  * @returns Returns the account's transfers of ETH
  */
 export const transfersOfETH = async (
@@ -34,8 +36,10 @@ export const transfersOfETH = async (
  * @param {ethers.providers.BlockTag} [fromBlock] Tag of from block
  * @param {ethers.providers.BlockTag} [toBlock] Tag of to block
  * @param {ERC20TransfersOptions} [options] Options
- * @param {boolean} [options.transactionResponse] If true include the transaction response
- * @param {boolean} [options.transactionReceipt] If true include the transaction receipt
+ * @param {boolean} [options.transactionResponse] If true then include the transaction response
+ * @param {boolean} [options.transactionReceipt] If true then include the transaction receipt
+ * @param {boolean} [options.isSender] If false then don't include transfers with accountAddress as sender
+ * @param {boolean} [options.isRecipient] If false then don't include transfers with accountAddress as recipient
  * @returns Returns the account's transfers of the ERC20 tokens
  */
 export const transfersOfERC20 = async (
@@ -50,8 +54,12 @@ export const transfersOfERC20 = async (
   const contract = new ethers.Contract(contractAddress, L2StandardERC20Interface, l2Provider)
 
   const [sends, receives] = await Promise.all([
-    contract.queryFilter(contract.filters.Transfer(accountAddress, undefined), fromBlock, toBlock),
-    contract.queryFilter(contract.filters.Transfer(undefined, accountAddress), fromBlock, toBlock),
+    !options || options.isSender !== false
+      ? contract.queryFilter(contract.filters.Transfer(accountAddress, undefined), fromBlock, toBlock)
+      : [],
+    !options || options.isRecipient !== false
+      ? contract.queryFilter(contract.filters.Transfer(undefined, accountAddress), fromBlock, toBlock)
+      : [],
   ])
 
   return Promise.all(

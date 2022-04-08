@@ -22,4 +22,6 @@ export interface ERC20Transfer {
 export interface ERC20TransfersOptions {
   transactionResponse?: boolean
   transactionReceipt?: boolean
+  isSender?: boolean
+  isRecipient?: boolean
 }

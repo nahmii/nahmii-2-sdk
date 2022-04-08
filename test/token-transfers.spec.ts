@@ -35,8 +35,8 @@ describe('token-transfers', () => {
     const Interface = sinon.stub()
 
     queryFilter = sinon.stub()
-    queryFilter.onFirstCall().resolves(senderEvents)
-    queryFilter.onSecondCall().resolves(recipientEvents)
+    queryFilter.withArgs(senderEventFilter).resolves(senderEvents)
+    queryFilter.withArgs(recipientEventFilter).resolves(recipientEvents)
 
     const TransferFn = sinon.stub()
     TransferFn.withArgs(accountAddress1, undefined).returns(senderEventFilter)
@@ -104,6 +104,50 @@ describe('token-transfers', () => {
         expect(queryFilter).to.have.been.calledWith(recipientEventFilter, undefined, undefined)
       })
     })
+
+    describe('with option.isSender being false', () => {
+      beforeEach(async () => {
+        expectedTransfers = await Promise.all(
+          recipientEvents.map(async (ev) => {
+            return transformEventToTransfer(ev, predeploys.NVM_ETH)
+          })
+        )
+      })
+
+      it('should retrieve only the transfers where the given account is recipient', async () => {
+        const transfers = await tokenTransfers.transfersOfETH(accountAddress1, l2Provider, fromBlock, toBlock, {
+          isSender: false,
+        })
+
+        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, l2Provider)
+
+        expect(transfers).to.deep.equal(expectedTransfers)
+        expect(queryFilter).to.not.have.been.calledWith(senderEventFilter, fromBlock, toBlock)
+        expect(queryFilter).to.have.been.calledWith(recipientEventFilter, fromBlock, toBlock)
+      })
+    })
+
+    describe('with option.isRecipient being false', () => {
+      beforeEach(async () => {
+        expectedTransfers = await Promise.all(
+          senderEvents.map(async (ev) => {
+            return transformEventToTransfer(ev, predeploys.NVM_ETH)
+          })
+        )
+      })
+
+      it('should retrieve only the transfers where the given account is sender', async () => {
+        const transfers = await tokenTransfers.transfersOfETH(accountAddress1, l2Provider, fromBlock, toBlock, {
+          isRecipient: false,
+        })
+
+        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, l2Provider)
+
+        expect(transfers).to.deep.equal(expectedTransfers)
+        expect(queryFilter).to.have.been.calledWith(senderEventFilter, fromBlock, toBlock)
+        expect(queryFilter).to.not.have.been.calledWith(recipientEventFilter, fromBlock, toBlock)
+      })
+    })
   })
 
   describe('transfersOfERC20', () => {
@@ -157,6 +201,64 @@ describe('token-transfers', () => {
         expect(transfers).to.deep.equal(expectedTransfers)
         expect(queryFilter).to.have.been.calledWith(senderEventFilter, undefined, undefined)
         expect(queryFilter).to.have.been.calledWith(recipientEventFilter, undefined, undefined)
+      })
+    })
+
+    describe('with option.isSender being false', () => {
+      beforeEach(async () => {
+        expectedTransfers = await Promise.all(
+          recipientEvents.map(async (ev) => {
+            return transformEventToTransfer(ev, contractAddress)
+          })
+        )
+      })
+
+      it('should retrieve only the transfers where the given account is recipient', async () => {
+        const transfers = await tokenTransfers.transfersOfERC20(
+          contractAddress,
+          accountAddress1,
+          l2Provider,
+          fromBlock,
+          toBlock,
+          {
+            isSender: false,
+          }
+        )
+
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Provider)
+
+        expect(transfers).to.deep.equal(expectedTransfers)
+        expect(queryFilter).to.not.have.been.calledWith(senderEventFilter, fromBlock, toBlock)
+        expect(queryFilter).to.have.been.calledWith(recipientEventFilter, fromBlock, toBlock)
+      })
+    })
+
+    describe('with option.isRecipient being false', () => {
+      beforeEach(async () => {
+        expectedTransfers = await Promise.all(
+          senderEvents.map(async (ev) => {
+            return transformEventToTransfer(ev, contractAddress)
+          })
+        )
+      })
+
+      it('should retrieve only the transfers where the given account is sender', async () => {
+        const transfers = await tokenTransfers.transfersOfERC20(
+          contractAddress,
+          accountAddress1,
+          l2Provider,
+          fromBlock,
+          toBlock,
+          {
+            isRecipient: false,
+          }
+        )
+
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Provider)
+
+        expect(transfers).to.deep.equal(expectedTransfers)
+        expect(queryFilter).to.have.been.calledWith(senderEventFilter, fromBlock, toBlock)
+        expect(queryFilter).to.not.have.been.calledWith(recipientEventFilter, fromBlock, toBlock)
       })
     })
   })
