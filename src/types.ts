@@ -25,3 +25,7 @@ export interface ERC20TransfersOptions {
   isSender?: boolean
   isRecipient?: boolean
 }
+
+export interface Overrides extends ethers.Overrides {
+  wait?: boolean
+}

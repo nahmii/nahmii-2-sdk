@@ -11,6 +11,7 @@ describe('token-transfers', () => {
   const accountAddress2 = '0xcafebabecafebabecafebabecafebabecafebabe'
 
   const l2Provider: ethers.providers.JsonRpcProvider = {} as ethers.providers.JsonRpcProvider
+  const l2Signer: ethers.Signer = {} as ethers.Signer
 
   const fromBlock: ethers.providers.BlockTag = 'some from block'
   const toBlock: ethers.providers.BlockTag = 'some to block'
@@ -18,11 +19,14 @@ describe('token-transfers', () => {
   const senderEventFilter = 'some sender filter'
   const recipientEventFilter = 'some recipient filter'
 
+  const gasPrice = ethers.utils.parseUnits('0.015', 'gwei')
+
   let senderEvents
   let recipientEvents
   let expectedTransfers: ERC20Transfer[]
   let queryFilter
   let TokenContract
+  let transferFn
 
   before(() => {
     proxyquire.noCallThru()
@@ -38,21 +42,25 @@ describe('token-transfers', () => {
     queryFilter.withArgs(senderEventFilter).resolves(senderEvents)
     queryFilter.withArgs(recipientEventFilter).resolves(recipientEvents)
 
-    const TransferFn = sinon.stub()
-    TransferFn.withArgs(accountAddress1, undefined).returns(senderEventFilter)
-    TransferFn.withArgs(undefined, accountAddress1).returns(recipientEventFilter)
+    const TransferFilterFn = sinon.stub()
+    TransferFilterFn.withArgs(accountAddress1, undefined).returns(senderEventFilter)
+    TransferFilterFn.withArgs(undefined, accountAddress1).returns(recipientEventFilter)
+
+    transferFn = sinon.stub()
 
     TokenContract = sinon.stub()
     TokenContract.prototype.queryFilter = queryFilter
     TokenContract.prototype.filters = {
-      Transfer: TransferFn,
+      Transfer: TransferFilterFn,
     }
+    TokenContract.prototype.transfer = transferFn
 
     tokenTransfers = proxyquire('@src/token-transfers', {
       ethers: {
         ethers: {
-          utils: { Interface },
+          utils: { Interface, parseUnits: ethers.utils.parseUnits },
           Contract: TokenContract,
+          BigNumber,
         },
       },
     })
@@ -259,6 +267,128 @@ describe('token-transfers', () => {
         expect(transfers).to.deep.equal(expectedTransfers)
         expect(queryFilter).to.have.been.calledWith(senderEventFilter, fromBlock, toBlock)
         expect(queryFilter).to.not.have.been.calledWith(recipientEventFilter, fromBlock, toBlock)
+      })
+    })
+  })
+
+  describe('transferETH', () => {
+    const txResponse = {} as ethers.providers.TransactionResponse
+    const amount = '123'
+
+    beforeEach(() => {
+      txResponse.wait = sinon.stub()
+      transferFn.resolves(txResponse)
+    })
+
+    describe('without overrides argument', () => {
+      it('should transfer ERC20 and not wait for transaction to be mined', async () => {
+        const result = await tokenTransfers.transferETH(accountAddress1, amount, l2Signer)
+
+        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, l2Signer)
+        expect(transferFn).to.have.been.calledWith(accountAddress1, ethers.BigNumber.from(amount), {
+          gasPrice,
+        })
+        expect(txResponse.wait).to.not.have.been.called
+        expect(result).to.equal(txResponse)
+      })
+    })
+
+    describe('with explicit intent to not wait for transaction being mined', () => {
+      it('should transfer ERC20 and not wait for transaction to be mined', async () => {
+        const result = await tokenTransfers.transferETH(accountAddress1, amount, l2Signer, {
+          wait: false,
+        })
+
+        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, l2Signer)
+        expect(transferFn).to.have.been.calledWith(accountAddress1, ethers.BigNumber.from(amount), {
+          wait: false,
+          gasPrice,
+        })
+        expect(txResponse.wait).to.not.have.been.called
+        expect(result).to.equal(txResponse)
+      })
+    })
+
+    describe('with explicit intent to wait for transaction being mined', () => {
+      const txReceipt = {} as ethers.providers.TransactionReceipt
+
+      beforeEach(async () => {
+        ;(txResponse.wait as any).resolves(txReceipt)
+      })
+
+      it('should transfer ERC20 and not wait for transaction to be mined', async () => {
+        const result = await tokenTransfers.transferETH(accountAddress1, amount, l2Signer, {
+          wait: true,
+        })
+
+        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, l2Signer)
+        expect(transferFn).to.have.been.calledWith(accountAddress1, ethers.BigNumber.from(amount), {
+          wait: true,
+          gasPrice,
+        })
+        expect(txResponse.wait).to.have.been.called
+        expect(result).to.equal(txReceipt)
+      })
+    })
+  })
+
+  describe('transferERC20', () => {
+    const txResponse = {} as ethers.providers.TransactionResponse
+    const amount = '123'
+
+    beforeEach(() => {
+      txResponse.wait = sinon.stub()
+      transferFn.resolves(txResponse)
+    })
+
+    describe('without overrides argument', () => {
+      it('should transfer ERC20 and not wait for transaction to be mined', async () => {
+        const result = await tokenTransfers.transferERC20(contractAddress, accountAddress1, amount, l2Signer)
+
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Signer)
+        expect(transferFn).to.have.been.calledWith(accountAddress1, ethers.BigNumber.from(amount), {
+          gasPrice,
+        })
+        expect(txResponse.wait).to.not.have.been.called
+        expect(result).to.equal(txResponse)
+      })
+    })
+
+    describe('with explicit intent to not wait for transaction being mined', () => {
+      it('should transfer ERC20 and not wait for transaction to be mined', async () => {
+        const result = await tokenTransfers.transferERC20(contractAddress, accountAddress1, amount, l2Signer, {
+          wait: false,
+        })
+
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Signer)
+        expect(transferFn).to.have.been.calledWith(accountAddress1, ethers.BigNumber.from(amount), {
+          wait: false,
+          gasPrice,
+        })
+        expect(txResponse.wait).to.not.have.been.called
+        expect(result).to.equal(txResponse)
+      })
+    })
+
+    describe('with explicit intent to wait for transaction being mined', () => {
+      const txReceipt = {} as ethers.providers.TransactionReceipt
+
+      beforeEach(async () => {
+        ;(txResponse.wait as any).resolves(txReceipt)
+      })
+
+      it('should transfer ERC20 and not wait for transaction to be mined', async () => {
+        const result = await tokenTransfers.transferERC20(contractAddress, accountAddress1, amount, l2Signer, {
+          wait: true,
+        })
+
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Signer)
+        expect(transferFn).to.have.been.calledWith(accountAddress1, ethers.BigNumber.from(amount), {
+          wait: true,
+          gasPrice,
+        })
+        expect(txResponse.wait).to.have.been.called
+        expect(result).to.equal(txReceipt)
       })
     })
   })
