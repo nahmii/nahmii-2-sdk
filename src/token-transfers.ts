@@ -91,7 +91,8 @@ export const transfersOfERC20 = async (
  * @param {ethers.BigNumberish} amount Amount to be transferred
  * @param {ethers.Signer} signer L2 signer
  * @param {Overrides} [overrides] Ethers overrides
- * @returns Returns a promise resolving to the transaction response or receipt, depending on the truthiness of `overrides.wait`
+ * @returns Returns a promise resolving to the transaction response
+ * or receipt, depending on the truthiness of `overrides.wait`
  */
 export const transferETH = async (
   toAccountAddress: string,
@@ -110,7 +111,8 @@ export const transferETH = async (
  * @param {ethers.BigNumberish} amount Amount to be transferred
  * @param {ethers.Signer} signer L2 signer
  * @param {Overrides} [overrides] Ethers overrides
- * @returns Returns a promise resolving to the transaction response or receipt, depending on the truthiness of `overrides.wait`
+ * @returns Returns a promise resolving to the transaction response
+ * or receipt, depending on the truthiness of `overrides.wait`
  */
 export const transferERC20 = async (
   contractAddress: string,
