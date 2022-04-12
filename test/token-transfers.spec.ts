@@ -10,8 +10,8 @@ describe('token-transfers', () => {
   const accountAddress1 = '0xcafed00dcafed00dcafed00dcafed00dcafed00d'
   const accountAddress2 = '0xcafebabecafebabecafebabecafebabecafebabe'
 
-  const l2Provider: ethers.providers.JsonRpcProvider = {} as ethers.providers.JsonRpcProvider
-  const l2Signer: ethers.Signer = {} as ethers.Signer
+  const provider: ethers.providers.JsonRpcProvider = {} as ethers.providers.JsonRpcProvider
+  const signer: ethers.Signer = {} as ethers.Signer
 
   const fromBlock: ethers.providers.BlockTag = 'some from block'
   const toBlock: ethers.providers.BlockTag = 'some to block'
@@ -20,6 +20,7 @@ describe('token-transfers', () => {
   const recipientEventFilter = 'some recipient filter'
 
   const gasPrice = ethers.utils.parseUnits('0.015', 'gwei')
+  const currentEpochTimeInSeconds = Math.floor(Date.now() / 1000)
 
   let senderEvents
   let recipientEvents
@@ -35,6 +36,13 @@ describe('token-transfers', () => {
   beforeEach(async () => {
     senderEvents = mockTransferEvents(accountAddress1, accountAddress2, 3)
     recipientEvents = mockTransferEvents(accountAddress2, accountAddress1, 2)
+
+    provider.getBlock = sinon.stub()
+    ;[...senderEvents, ...recipientEvents].forEach(({ blockNumber }) =>
+      (provider.getBlock as any).withArgs(blockNumber).resolves({
+        timestamp: currentEpochTimeInSeconds + (blockNumber - 1000) * 3,
+      })
+    )
 
     const Interface = sinon.stub()
 
@@ -71,7 +79,7 @@ describe('token-transfers', () => {
       beforeEach(async () => {
         expectedTransfers = await Promise.all(
           [...senderEvents, ...recipientEvents].map(async (ev) => {
-            return transformEventToTransfer(ev, predeploys.NVM_ETH, {
+            return transformEventToTransfer(provider, ev, predeploys.NVM_ETH, {
               transactionResponse: true,
               transactionReceipt: true,
             })
@@ -80,12 +88,12 @@ describe('token-transfers', () => {
       })
 
       it('should retrieve the transfers', async () => {
-        const transfers = await tokenTransfers.transfersOfETH(accountAddress1, l2Provider, fromBlock, toBlock, {
+        const transfers = await tokenTransfers.transfersOfETH(accountAddress1, provider, fromBlock, toBlock, {
           transactionResponse: true,
           transactionReceipt: true,
         })
 
-        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, l2Provider)
+        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, provider)
 
         expect(transfers).to.deep.equal(expectedTransfers)
         expect(queryFilter).to.have.been.calledWith(senderEventFilter, fromBlock, toBlock)
@@ -97,15 +105,15 @@ describe('token-transfers', () => {
       beforeEach(async () => {
         expectedTransfers = await Promise.all(
           [...senderEvents, ...recipientEvents].map(async (ev) => {
-            return transformEventToTransfer(ev, predeploys.NVM_ETH)
+            return transformEventToTransfer(provider, ev, predeploys.NVM_ETH)
           })
         )
       })
 
       it('should retrieve the transfers', async () => {
-        const transfers = await tokenTransfers.transfersOfETH(accountAddress1, l2Provider)
+        const transfers = await tokenTransfers.transfersOfETH(accountAddress1, provider)
 
-        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, l2Provider)
+        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, provider)
 
         expect(transfers).to.deep.equal(expectedTransfers)
         expect(queryFilter).to.have.been.calledWith(senderEventFilter, undefined, undefined)
@@ -117,17 +125,17 @@ describe('token-transfers', () => {
       beforeEach(async () => {
         expectedTransfers = await Promise.all(
           recipientEvents.map(async (ev) => {
-            return transformEventToTransfer(ev, predeploys.NVM_ETH)
+            return transformEventToTransfer(provider, ev, predeploys.NVM_ETH)
           })
         )
       })
 
       it('should retrieve only the transfers where the given account is recipient', async () => {
-        const transfers = await tokenTransfers.transfersOfETH(accountAddress1, l2Provider, fromBlock, toBlock, {
+        const transfers = await tokenTransfers.transfersOfETH(accountAddress1, provider, fromBlock, toBlock, {
           isSender: false,
         })
 
-        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, l2Provider)
+        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, provider)
 
         expect(transfers).to.deep.equal(expectedTransfers)
         expect(queryFilter).to.not.have.been.calledWith(senderEventFilter, fromBlock, toBlock)
@@ -139,17 +147,17 @@ describe('token-transfers', () => {
       beforeEach(async () => {
         expectedTransfers = await Promise.all(
           senderEvents.map(async (ev) => {
-            return transformEventToTransfer(ev, predeploys.NVM_ETH)
+            return transformEventToTransfer(provider, ev, predeploys.NVM_ETH)
           })
         )
       })
 
       it('should retrieve only the transfers where the given account is sender', async () => {
-        const transfers = await tokenTransfers.transfersOfETH(accountAddress1, l2Provider, fromBlock, toBlock, {
+        const transfers = await tokenTransfers.transfersOfETH(accountAddress1, provider, fromBlock, toBlock, {
           isRecipient: false,
         })
 
-        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, l2Provider)
+        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, provider)
 
         expect(transfers).to.deep.equal(expectedTransfers)
         expect(queryFilter).to.have.been.calledWith(senderEventFilter, fromBlock, toBlock)
@@ -163,7 +171,7 @@ describe('token-transfers', () => {
       beforeEach(async () => {
         expectedTransfers = await Promise.all(
           [...senderEvents, ...recipientEvents].map(async (ev) => {
-            return transformEventToTransfer(ev, contractAddress, {
+            return transformEventToTransfer(provider, ev, contractAddress, {
               transactionResponse: true,
               transactionReceipt: true,
             })
@@ -175,7 +183,7 @@ describe('token-transfers', () => {
         const transfers = await tokenTransfers.transfersOfERC20(
           contractAddress,
           accountAddress1,
-          l2Provider,
+          provider,
           fromBlock,
           toBlock,
           {
@@ -184,7 +192,7 @@ describe('token-transfers', () => {
           }
         )
 
-        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Provider)
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, provider)
 
         expect(transfers).to.deep.equal(expectedTransfers)
         expect(queryFilter).to.have.been.calledWith(senderEventFilter, fromBlock, toBlock)
@@ -196,15 +204,15 @@ describe('token-transfers', () => {
       beforeEach(async () => {
         expectedTransfers = await Promise.all(
           [...senderEvents, ...recipientEvents].map(async (ev) => {
-            return transformEventToTransfer(ev, contractAddress)
+            return transformEventToTransfer(provider, ev, contractAddress)
           })
         )
       })
 
       it('should retrieve the transfers', async () => {
-        const transfers = await tokenTransfers.transfersOfERC20(contractAddress, accountAddress1, l2Provider)
+        const transfers = await tokenTransfers.transfersOfERC20(contractAddress, accountAddress1, provider)
 
-        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Provider)
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, provider)
 
         expect(transfers).to.deep.equal(expectedTransfers)
         expect(queryFilter).to.have.been.calledWith(senderEventFilter, undefined, undefined)
@@ -216,7 +224,7 @@ describe('token-transfers', () => {
       beforeEach(async () => {
         expectedTransfers = await Promise.all(
           recipientEvents.map(async (ev) => {
-            return transformEventToTransfer(ev, contractAddress)
+            return transformEventToTransfer(provider, ev, contractAddress)
           })
         )
       })
@@ -225,7 +233,7 @@ describe('token-transfers', () => {
         const transfers = await tokenTransfers.transfersOfERC20(
           contractAddress,
           accountAddress1,
-          l2Provider,
+          provider,
           fromBlock,
           toBlock,
           {
@@ -233,7 +241,7 @@ describe('token-transfers', () => {
           }
         )
 
-        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Provider)
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, provider)
 
         expect(transfers).to.deep.equal(expectedTransfers)
         expect(queryFilter).to.not.have.been.calledWith(senderEventFilter, fromBlock, toBlock)
@@ -245,7 +253,7 @@ describe('token-transfers', () => {
       beforeEach(async () => {
         expectedTransfers = await Promise.all(
           senderEvents.map(async (ev) => {
-            return transformEventToTransfer(ev, contractAddress)
+            return transformEventToTransfer(provider, ev, contractAddress)
           })
         )
       })
@@ -254,7 +262,7 @@ describe('token-transfers', () => {
         const transfers = await tokenTransfers.transfersOfERC20(
           contractAddress,
           accountAddress1,
-          l2Provider,
+          provider,
           fromBlock,
           toBlock,
           {
@@ -262,7 +270,7 @@ describe('token-transfers', () => {
           }
         )
 
-        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Provider)
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, provider)
 
         expect(transfers).to.deep.equal(expectedTransfers)
         expect(queryFilter).to.have.been.calledWith(senderEventFilter, fromBlock, toBlock)
@@ -282,9 +290,9 @@ describe('token-transfers', () => {
 
     describe('without overrides argument', () => {
       it('should transfer ERC20 and not wait for transaction to be mined', async () => {
-        const result = await tokenTransfers.transferETH(accountAddress1, amount, l2Signer)
+        const result = await tokenTransfers.transferETH(accountAddress1, amount, signer)
 
-        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, l2Signer)
+        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, signer)
         expect(transferFn).to.have.been.calledWith(accountAddress1, ethers.BigNumber.from(amount), {
           gasPrice,
         })
@@ -295,13 +303,12 @@ describe('token-transfers', () => {
 
     describe('with explicit intent to not wait for transaction being mined', () => {
       it('should transfer ERC20 and not wait for transaction to be mined', async () => {
-        const result = await tokenTransfers.transferETH(accountAddress1, amount, l2Signer, {
+        const result = await tokenTransfers.transferETH(accountAddress1, amount, signer, {
           wait: false,
         })
 
-        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, l2Signer)
+        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, signer)
         expect(transferFn).to.have.been.calledWith(accountAddress1, ethers.BigNumber.from(amount), {
-          wait: false,
           gasPrice,
         })
         expect(txResponse.wait).to.not.have.been.called
@@ -317,13 +324,12 @@ describe('token-transfers', () => {
       })
 
       it('should transfer ERC20 and not wait for transaction to be mined', async () => {
-        const result = await tokenTransfers.transferETH(accountAddress1, amount, l2Signer, {
+        const result = await tokenTransfers.transferETH(accountAddress1, amount, signer, {
           wait: true,
         })
 
-        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, l2Signer)
+        expect(TokenContract).to.have.been.calledWith(predeploys.NVM_ETH, sinon.match.any, signer)
         expect(transferFn).to.have.been.calledWith(accountAddress1, ethers.BigNumber.from(amount), {
-          wait: true,
           gasPrice,
         })
         expect(txResponse.wait).to.have.been.called
@@ -343,9 +349,9 @@ describe('token-transfers', () => {
 
     describe('without overrides argument', () => {
       it('should transfer ERC20 and not wait for transaction to be mined', async () => {
-        const result = await tokenTransfers.transferERC20(contractAddress, accountAddress1, amount, l2Signer)
+        const result = await tokenTransfers.transferERC20(contractAddress, accountAddress1, amount, signer)
 
-        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Signer)
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, signer)
         expect(transferFn).to.have.been.calledWith(accountAddress1, ethers.BigNumber.from(amount), {
           gasPrice,
         })
@@ -356,13 +362,12 @@ describe('token-transfers', () => {
 
     describe('with explicit intent to not wait for transaction being mined', () => {
       it('should transfer ERC20 and not wait for transaction to be mined', async () => {
-        const result = await tokenTransfers.transferERC20(contractAddress, accountAddress1, amount, l2Signer, {
+        const result = await tokenTransfers.transferERC20(contractAddress, accountAddress1, amount, signer, {
           wait: false,
         })
 
-        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Signer)
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, signer)
         expect(transferFn).to.have.been.calledWith(accountAddress1, ethers.BigNumber.from(amount), {
-          wait: false,
           gasPrice,
         })
         expect(txResponse.wait).to.not.have.been.called
@@ -378,13 +383,12 @@ describe('token-transfers', () => {
       })
 
       it('should transfer ERC20 and not wait for transaction to be mined', async () => {
-        const result = await tokenTransfers.transferERC20(contractAddress, accountAddress1, amount, l2Signer, {
+        const result = await tokenTransfers.transferERC20(contractAddress, accountAddress1, amount, signer, {
           wait: true,
         })
 
-        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, l2Signer)
+        expect(TokenContract).to.have.been.calledWith(contractAddress, sinon.match.any, signer)
         expect(transferFn).to.have.been.calledWith(accountAddress1, ethers.BigNumber.from(amount), {
-          wait: true,
           gasPrice,
         })
         expect(txResponse.wait).to.have.been.called
@@ -396,6 +400,7 @@ describe('token-transfers', () => {
 
 type TransferEvent = {
   args: [string, string, BigNumber]
+  blockNumber: number
   getTransaction: () => any
   getTransactionReceipt: () => any
 }
@@ -406,8 +411,11 @@ const mockTransferEvents = (sender: string, recipient: string, count: number, ma
   for (let i = 0; i < count; i++) {
     const amount = BigNumber.from(Math.ceil(Math.random() * max))
 
+    const blockNumber = 1000 + 100 * (i - 1) + Math.floor(100 * Math.random())
+
     events.push({
       args: [sender, recipient, amount],
+      blockNumber,
       getTransaction: async () => `response: ${amount.toString()} transferred from ${sender} to ${recipient}`,
       getTransactionReceipt: async () => `receipt: ${amount.toString()} transferred from ${sender} to ${recipient}`,
     })
@@ -417,12 +425,15 @@ const mockTransferEvents = (sender: string, recipient: string, count: number, ma
 }
 
 const transformEventToTransfer = async (
+  provider: ethers.providers.JsonRpcProvider,
   event: TransferEvent,
   contractAddress: string,
   options?: ERC20TransfersOptions
 ): Promise<ERC20Transfer> => {
-  const [sender, recipient, amount] = event.args as Array<any>
-  const [transactionResponse, transactionReceipt] = await Promise.all([
+  const { blockNumber, args } = event
+  const [sender, recipient, amount] = args as Array<any>
+  const [block, transactionResponse, transactionReceipt] = await Promise.all([
+    provider.getBlock(blockNumber),
     options && options.transactionResponse ? await event.getTransaction() : undefined,
     options && options.transactionReceipt ? await event.getTransactionReceipt() : undefined,
   ])
@@ -430,6 +441,7 @@ const transformEventToTransfer = async (
   return {
     contractAddress,
     sender,
+    timestamp: block.timestamp,
     recipient,
     amount,
     transactionResponse,
