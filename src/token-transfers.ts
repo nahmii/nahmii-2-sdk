@@ -66,14 +66,17 @@ export const transfersOfERC20 = async (
 
   return Promise.all(
     [...sends, ...receives].map(async (ev) => {
-      const [sender, recipient, amount] = ev.args as Array<any>
-      const [transactionResponse, transactionReceipt] = await Promise.all([
+      const { blockNumber, args } = ev
+      const [sender, recipient, amount] = args as Array<any>
+      const [block, transactionResponse, transactionReceipt] = await Promise.all([
+        provider.getBlock(blockNumber),
         options && options.transactionResponse ? await ev.getTransaction() : undefined,
         options && options.transactionReceipt ? await ev.getTransactionReceipt() : undefined,
       ])
 
       return {
         contractAddress,
+        timestamp: block.timestamp,
         sender,
         recipient,
         amount,
@@ -125,7 +128,10 @@ export const transferERC20 = async (
   const contract = new ethers.Contract(contractAddress, L2StandardERC20Interface, signer)
   const _amount = ethers.BigNumber.from(amount)
 
-  let tx = await contract.transfer(toAccountAddress, _amount, { ...overrides, gasPrice })
+  const _overrides = { ...overrides, gasPrice }
+  delete _overrides.wait
+
+  let tx = await contract.transfer(toAccountAddress, _amount, _overrides)
 
   if (overrides?.wait) {
     tx = await tx.wait()

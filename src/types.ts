@@ -12,6 +12,7 @@ export interface Decoded {
 
 export interface ERC20Transfer {
   contractAddress: string
+  timestamp: number
   sender: string
   recipient: string
   amount: number
