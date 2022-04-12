@@ -52,7 +52,7 @@ describe('token-balances', () => {
         const balance = await tokenBalances.balanceOfETH(accountAddress, l2Provider)
 
         expect(balance).to.equal(expectedBalance)
-        expect(balanceOf).to.have.been.calledWithExactly(accountAddress, undefined)
+        expect(balanceOf).to.have.been.calledWithExactly(accountAddress)
       })
     })
   })
@@ -72,7 +72,7 @@ describe('token-balances', () => {
         const balance = await tokenBalances.balanceOfERC20(contractAddress, accountAddress, l2Provider)
 
         expect(balance).to.equal(expectedBalance)
-        expect(balanceOf).to.have.been.calledWithExactly(accountAddress, undefined)
+        expect(balanceOf).to.have.been.calledWithExactly(accountAddress)
       })
     })
   })

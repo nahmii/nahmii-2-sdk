@@ -35,6 +35,10 @@ export const balanceOfERC20 = async (
 ): Promise<BigNumber> => {
   const L2StandardERC20Interface = new ethers.utils.Interface(L2StandardERC20ABI)
   const contract = new ethers.Contract(contractAddress, L2StandardERC20Interface, l2Provider)
-  const overrides = block ? { blockTag: block } : undefined
-  return contract.balanceOf(accountAddress, overrides)
+
+  if (block) {
+    return contract.balanceOf(accountAddress, { blockTag: block })
+  } else {
+    return contract.balanceOf(accountAddress)
+  }
 }
