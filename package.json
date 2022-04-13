@@ -1,6 +1,6 @@
 {
   "name": "@nahmii/sdk",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "The `@nahmii/sdk` package is an SDK to interact with Nahmii 2.0.",
   "main": "dist/index",
   "types": "dist/index",
